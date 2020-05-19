@@ -24,19 +24,23 @@ FLAGS+=" -g3"
 FLAGS+=" -DEI_SENSOR_AQ_STREAM=FILE"
 FLAGS+=" -mfpu=fpv4-sp-d16"
 
-
 if [ "$COMMAND" = "--build" ];
 then
-	echo -n "Building $PROJECT "
-	arduino-cli compile --fqbn  $BOARD --build-properties build.extra_flags="$INCLUDE $FLAGS" $PROJECT 2>/dev/null &
+	echo "Building $PROJECT"
+	arduino-cli compile --fqbn  $BOARD --build-properties build.extra_flags="$INCLUDE $FLAGS" $PROJECT &
 	pid=$! # Process Id of the previous running command
 	while kill -0 $pid 2>/dev/null
 	do
-		echo -n "."
+		echo "Still building..."
 		sleep 2
 	done
-	echo ""
-	echo "Building $PROJECT done"
+	wait $pid
+	ret=$?
+	if [ $ret -eq 0 ]; then
+		echo "Building $PROJECT done"
+	else
+		exit "Building $PROJECT failed"
+	fi
 elif [ "$COMMAND" = "--flash" ];
 then
 	arduino-cli upload -p $(arduino-cli board list | grep Arduino | cut -d ' ' -f1) --fqbn $BOARD -i arduino-test.ino.arduino.mbed.nano33ble.bin
