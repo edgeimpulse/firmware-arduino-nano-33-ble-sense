@@ -36,13 +36,12 @@
 
 
 typedef struct {
-
     int16_t *buffers[2];
     uint8_t buf_select;
     uint8_t buf_ready;
     uint32_t buf_count;
     uint32_t n_samples;
-}inference_t;
+} inference_t;
 
 /* Extern declared --------------------------------------------------------- */
 extern ei_config_t *ei_config_get_config();
@@ -53,18 +52,11 @@ static size_t ei_write(const void*, size_t size, size_t count, EI_SENSOR_AQ_STRE
     ei_printf("Writing: %d\r\n", count);
     return count;
 }
+
 static int ei_seek(EI_SENSOR_AQ_STREAM*, long int offset, int origin)
 {
     ei_printf("Seeking: %d\r\n", offset);
     return 0;
-}
-static time_t ei_time(time_t* t)
-{
-    time_t cur_time = 4564867;
-    if(t)
-        *(t) = cur_time;
-    ei_printf("Timing\r\n");
-    return cur_time;
 }
 
 /* Private variables ------------------------------------------------------- */
@@ -86,7 +78,7 @@ static sensor_aq_ctx ei_mic_ctx = {
     &ei_mic_signing_ctx,
     &ei_write,
     &ei_seek,
-    &ei_time,
+    NULL,
 };
 
 /* Audio thread setup */
@@ -100,14 +92,14 @@ static EventQueue mic_queue;
 
 /* Private functions ------------------------------------------------------- */
 
-static void ei_microphone_blink() {    
+static void ei_microphone_blink() {
     led = !led;
 }
 
 static void audio_buffer_callback(uint32_t n_bytes)
-{    
+{
     ei_nano_fs_write_samples((const void *)sampleBuffer, headerOffset + current_sample, n_bytes);
-    
+
 
     ei_mic_ctx.signature_ctx->update(ei_mic_ctx.signature_ctx, (uint8_t*)sampleBuffer, n_bytes);
 
@@ -122,11 +114,11 @@ static void audio_buffer_callback(uint32_t n_bytes)
 static void pdm_data_ready_callback(void)
 {
     int bytesAvailable = PDM.available();
-    
+
 
     // read into the sample buffer
     int bytesRead = PDM.read((char *)&sampleBuffer[0], bytesAvailable);
-     
+
     if(record_ready == true) {
         mic_queue.call(&audio_buffer_callback, bytesRead);
     }
@@ -134,32 +126,32 @@ static void pdm_data_ready_callback(void)
 
 
 static void audio_buffer_inference_callback(uint32_t n_bytes)
-{    
+{
     for(int i = 0; i < n_bytes>>1; i++) {
         inference.buffers[inference.buf_select][inference.buf_count++] = sampleBuffer[i];
-    
-        if(inference.buf_count >= inference.n_samples) {            
+
+        if(inference.buf_count >= inference.n_samples) {
             inference.buf_select ^= 1;
-            inference.buf_count= 0;
+            inference.buf_count = 0;
             inference.buf_ready = 1;
         }
-    }  
+    }
 }
 
 static void pdm_data_ready_inference_callback(void)
 {
     int bytesAvailable = PDM.available();
-    
+
     // read into the sample buffer
     int bytesRead = PDM.read((char *)&sampleBuffer[0], bytesAvailable);
-     
+
     if(record_ready == true) {
         mic_queue.call(&audio_buffer_inference_callback, bytesRead);
     }
 }
 
 static void finish_and_upload(char *filename, uint32_t sample_length_ms) {
-    
+
 
     ei_printf("Done sampling, total bytes collected: %u\n", current_sample);
 
@@ -171,9 +163,9 @@ static void finish_and_upload(char *filename, uint32_t sample_length_ms) {
 
     Timer upload_timer;
     upload_timer.start();
-    
+
     //ei_printf("Not uploading file, not connected to WiFi. Used buffer, type=%d, from=%lu, to=%lu, sensor_name=%s, sensor_units=%s.\n",
-    //            EI_INT16, 0, sample_block*4096 + headerOffset, "audio", "wav");        
+    //            EI_INT16, 0, sample_block*4096 + headerOffset, "audio", "wav");
     ei_printf("Not uploading file, not connected to WiFi. Used buffer, from=%lu, to=%lu.\n", 0, current_sample + headerOffset);
 
     upload_timer.stop();
@@ -202,14 +194,14 @@ static int insert_ref(char *buffer, int hdrLength)
     }
 
     buffer[addLength++] = 0xFF;
-    
+
     return addLength;
 }
 
 static bool create_header(void)
 {
-    sensor_aq_init_mbedtls_hs256_context(&ei_mic_signing_ctx, &ei_mic_hs_ctx, ei_config_get_config()->sample_hmac_key);        
-    
+    sensor_aq_init_mbedtls_hs256_context(&ei_mic_signing_ctx, &ei_mic_hs_ctx, ei_config_get_config()->sample_hmac_key);
+
     sensor_aq_payload_info payload = {
         EiDevice.get_id_pointer(),
         EiDevice.get_type_pointer(),
@@ -267,7 +259,7 @@ static bool create_header(void)
 
 /* Public functions -------------------------------------------------------- */
 
-bool ei_microphone_record(uint32_t sample_length_ms, uint32_t start_delay_ms, bool print_start_messages) 
+bool ei_microphone_record(uint32_t sample_length_ms, uint32_t start_delay_ms, bool print_start_messages)
 {
     if (print_start_messages) {
         ei_printf("Starting in %lu ms... (or until all flash was erased)\n", start_delay_ms < 2000 ? 2000 : start_delay_ms);
@@ -277,11 +269,12 @@ bool ei_microphone_record(uint32_t sample_length_ms, uint32_t start_delay_ms, bo
         ThisThread::sleep_for(2000 - start_delay_ms);
     }
 
-    if(ei_nano_fs_erase_sampledata(0, (samples_required << 1) + 4096) != NANO_FS_CMD_OK)
-        return false;    
+    if(ei_nano_fs_erase_sampledata(0, (samples_required << 1) + 4096) != NANO_FS_CMD_OK) {
+        return false;
+    }
 
     create_header();
-    
+
     queue_thread.start(callback(&mic_queue, &EventQueue::dispatch_forever));
 
     if (print_start_messages) {
@@ -295,13 +288,13 @@ bool ei_microphone_inference_start(uint32_t n_samples)
 {
 
     inference.buffers[0] = (int16_t *)malloc(n_samples * sizeof(int16_t));
-    
+
     if(inference.buffers[0] == NULL) {
         return false;
     }
-    
+
     inference.buffers[1] = (int16_t *)malloc(n_samples * sizeof(int16_t));
-    
+
     if(inference.buffers[0] == NULL) {
         free(inference.buffers[0]);
         return false;
@@ -312,15 +305,13 @@ bool ei_microphone_inference_start(uint32_t n_samples)
     inference.n_samples  = n_samples;
     inference.buf_ready  = 0;
 
-    ei_printf("N samples: %d\r\n", n_samples);
-
     queue_thread.start(callback(&mic_queue, &EventQueue::dispatch_forever));
 
     // configure the data receive callback
     PDM.onReceive(&pdm_data_ready_inference_callback);
 
     // optionally set the gain, defaults to 20
-    PDM.setGain(80);    
+    PDM.setGain(80);
 
     //ei_printf("Sector size: %d nblocks: %d\r\n", ei_nano_fs_get_block_size(), n_sample_blocks);
     PDM.setBufferSize(ei_nano_fs_get_block_size());
@@ -340,6 +331,9 @@ bool ei_microphone_inference_start(uint32_t n_samples)
 
 bool ei_microphone_inference_record(void)
 {
+    inference.buf_ready = 0;
+    inference.buf_count = 0;
+
     while(inference.buf_ready == 0) {
         ThisThread::sleep_for(10);
     }
@@ -354,9 +348,9 @@ bool ei_microphone_inference_record(void)
  * Get raw audio signal data
  */
 int ei_microphone_audio_signal_get_data(size_t offset, size_t length, float *out_ptr)
-{    
+{
     arm_q15_to_float(&inference.buffers[inference.buf_select ^ 1][offset], out_ptr, length);
-    
+
     return 0;
 }
 
@@ -390,9 +384,9 @@ bool ei_microphone_sample_start(void)
     }
     ei_printf("\tFile name: %s\n", filename);
 
-    
+
     samples_required = (uint32_t)(((float)ei_config_get_config()->sample_length_ms) / ei_config_get_config()->sample_interval_ms);
-    
+
     /* Round to even number of samples for word align flash write */
     if(samples_required & 1) {
         samples_required++;
@@ -406,9 +400,9 @@ bool ei_microphone_sample_start(void)
     PDM.onReceive(&pdm_data_ready_callback);
 
     // optionally set the gain, defaults to 20
-    PDM.setGain(80);    
+    PDM.setGain(80);
 
-    //ei_printf("Sector size: %d nblocks: %d\r\n", ei_nano_fs_get_block_size(), n_sample_blocks);
+    // ei_printf("Sector size: %d\r\n", ei_nano_fs_get_block_size());
     PDM.setBufferSize(ei_nano_fs_get_block_size());
 
     // initialize PDM with:
@@ -422,7 +416,7 @@ bool ei_microphone_sample_start(void)
     if (!r) {
         return r;
     }
-    record_ready = true;    
+    record_ready = true;
 
 
     while(record_ready == true) {

@@ -24,6 +24,7 @@
 
 #define EI_CLASSIFIER_UTENSOR                    1
 #define EI_CLASSIFIER_TFLITE                     2
+#define EI_CLASSIFIER_CUBEAI                     3
 
 #define EI_CLASSIFIER_SENSOR_MICROPHONE          1
 #define EI_CLASSIFIER_SENSOR_ACCELEROMETER       2
@@ -33,15 +34,15 @@
 #define EI_CLASSIFIER_RAW_SAMPLES_PER_FRAME      3
 #define EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE       (EI_CLASSIFIER_RAW_SAMPLE_COUNT * EI_CLASSIFIER_RAW_SAMPLES_PER_FRAME)
 #define EI_CLASSIFIER_INTERVAL_MS                16
-#define EI_CLASSIFIER_OUT_TENSOR_NAME            "y_pred/Softmax:0"
-#define EI_CLASSIFIER_LABEL_COUNT                6
+#define EI_CLASSIFIER_OUT_TENSOR_NAME            "y_pred/Identity:0"
+#define EI_CLASSIFIER_LABEL_COUNT                4
 #define EI_CLASSIFIER_HAS_ANOMALY                1
 #define EI_CLASSIFIER_FREQUENCY                  62.5
-#define EI_CLASSIFIER_TFLITE_ARENA_SIZE          (32 * 1024)
+#define EI_CLASSIFIER_TFLITE_ARENA_SIZE          3483
 #define EI_CLASSIFIER_INFERENCING_ENGINE         EI_CLASSIFIER_TFLITE
 #define EI_CLASSIFIER_SENSOR                     EI_CLASSIFIER_SENSOR_ACCELEROMETER
 
-const char* ei_classifier_inferencing_categories[] = { "beer", "fistbump", "idle", "snake", "updown", "wave" };
+const char* ei_classifier_inferencing_categories[] = { "idle", "snake", "updown", "wave" };
 
 typedef struct {
     int axes;
@@ -83,7 +84,7 @@ typedef struct {
     const char * spectral_power_edges;
 } ei_dsp_config_spectral_analysis_t;
 
-ei_dsp_config_spectral_analysis_t ei_dsp_config_65 = {
+ei_dsp_config_spectral_analysis_t ei_dsp_config_237 = {
     3,
     1.00000f,
     "low",

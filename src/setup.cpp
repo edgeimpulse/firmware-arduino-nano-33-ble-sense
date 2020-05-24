@@ -11,11 +11,7 @@ EventQueue main_application_queue;
 static unsigned char repl_stack[8 * 1024];
 static AtCmdRepl repl(&main_application_queue, ei_get_serial(), sizeof(repl_stack), repl_stack);
 
-
-
 DigitalOut led(LED1);
-
-
 
 void print_memory_info() {
     // allocate enough room for every thread's stack statistics
@@ -95,13 +91,7 @@ void ei_main() {
     config_ctx.load_config = &ei_nano_fs_load_config;
     config_ctx.save_config = &ei_nano_fs_save_config;
     config_ctx.list_files = NULL;
-    // config_ctx.read_file = &ei_mbed_fs_read_file;
-    // config_ctx.unlink_file = &ei_mbed_fs_unlink_file;
-    // config_ctx.upload_file = &ei_mbed_fs_upload_file;
-//    config_ctx.get_sensor_list = get_sensor_list;
     config_ctx.read_buffer = &ei_nano_fs_read_buffer;
-
-
 
     EI_CONFIG_ERROR cr = ei_config_init(&config_ctx);
 
@@ -117,9 +107,4 @@ void ei_main() {
 
     repl.start_repl();
     main_application_queue.dispatch_forever();
-
-
-    while (1) {
-
-    }
 }

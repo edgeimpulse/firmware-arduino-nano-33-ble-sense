@@ -19,9 +19,9 @@ FLAGS="-DARDUINOSTL_M_H"
 FLAGS+=" -DMBED_HEAP_STATS_ENABLED=1"
 FLAGS+=" -DMBED_STACK_STATS_ENABLED=1"
 FLAGS+=" -O3"
-FLAGS+=" -DMBED_DEBUG"
 FLAGS+=" -g3"
 FLAGS+=" -DEI_SENSOR_AQ_STREAM=FILE"
+FLAGS+=" -DEIDSP_QUANTIZE_FILTERBANK=0"
 FLAGS+=" -mfpu=fpv4-sp-d16"
 
 if [ "$COMMAND" = "--build" ];
@@ -43,12 +43,12 @@ then
 	fi
 elif [ "$COMMAND" = "--flash" ];
 then
-	arduino-cli upload -p $(arduino-cli board list | grep Arduino | cut -d ' ' -f1) --fqbn $BOARD -i arduino-test.ino.arduino.mbed.nano33ble.bin
+	arduino-cli upload -p $(arduino-cli board list | grep Arduino | cut -d ' ' -f1) --fqbn $BOARD -i *.bin
 elif [ "$COMMAND" = "--all" ];
 then
 	arduino-cli compile --fqbn  $BOARD --build-properties build.extra_flags="$INCLUDE $FLAGS" $PROJECT
 	status=$?
-	[ $status -eq 0 ] && arduino-cli upload -p $(arduino-cli board list | grep Arduino | cut -d ' ' -f1) --fqbn $BOARD -i arduino-test.ino.arduino.mbed.nano33ble.bin
+	[ $status -eq 0 ] && arduino-cli upload -p $(arduino-cli board list | grep Arduino | cut -d ' ' -f1) --fqbn $BOARD -i *.bin
 else
 	echo "Nothing to do for target"
 fi

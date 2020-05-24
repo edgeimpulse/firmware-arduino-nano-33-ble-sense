@@ -74,14 +74,6 @@ static int ei_seek(EI_SENSOR_AQ_STREAM*, long int offset, int origin)
     return 0;
 }
 
-static time_t ei_time(time_t* t)
-{
-    time_t cur_time = 4564867;
-    if(t)
-        *(t) = cur_time;
-    return cur_time;
-}
-
 static unsigned char ei_mic_ctx_buffer[1024];
 static sensor_aq_signing_ctx_t ei_mic_signing_ctx;
 static sensor_aq_mbedtls_hs256_ctx_t ei_mic_hs_ctx;
@@ -90,7 +82,7 @@ static sensor_aq_ctx ei_mic_ctx = {
     &ei_mic_signing_ctx,
     &ei_write,
     &ei_seek,
-    &ei_time,
+    NULL,
 };
 
 static void ei_write_last_data(void)
@@ -238,7 +230,7 @@ bool ei_sampler_start_sampling(void *v_ptr_payload, uint32_t sample_size)
 
 
 static bool create_header(sensor_aq_payload_info *payload)
-{    
+{
     sensor_aq_init_mbedtls_hs256_context(&ei_mic_signing_ctx, &ei_mic_hs_ctx, ei_config_get_config()->sample_hmac_key);
 
 
@@ -269,7 +261,7 @@ static bool create_header(sensor_aq_payload_info *payload)
     if (tr != 0) {
         ei_printf("Failed to write to header blockdevice (%d)\n", tr);
         return false;
-    }    
+    }
 
     ei_mic_ctx.stream = &stream;
 
@@ -314,7 +306,7 @@ static void finish_and_upload(char *filename, uint32_t sample_length_ms)
  * @return     true if all required samples are received. Caller should stop sampling,
  */
 static bool sample_data_callback(const void *sample_buf, uint32_t byteLenght)
-{    
+{
     sensor_aq_add_data(&ei_mic_ctx, (float *)sample_buf, byteLenght / sizeof(float));
 
     if(++current_sample > samples_required) {

@@ -50,14 +50,14 @@ static bool acc_data_callback(const void *sample_buf, uint32_t byteLenght)
 }
 
 static void acc_read_data(float *values, size_t value_size)
-{    
+{
     for(int i=0; i < value_size; i++) {
         values[i] = acc_buf[i];
     }
 }
 
 void run_nn(bool debug) {
-    
+
     bool stop_inferencing = false;
     // summary of inferencing settings (from model_metadata.h)
     ei_printf("Inferencing settings:\n");
@@ -68,36 +68,9 @@ void run_nn(bool debug) {
     ei_printf("\tNo. of classes: %d\n", sizeof(ei_classifier_inferencing_categories) / sizeof(ei_classifier_inferencing_categories[0]));
 
     ei_printf("Starting inferencing, press 'b' to break\n");
-    
+
 
     while (stop_inferencing == false) {
-    
-        
-        ei_inertial_sample_start(&acc_data_callback, EI_CLASSIFIER_INTERVAL_MS);
-
-        // run the impulse: DSP, neural network and the Anomaly algorithm
-        ei_impulse_result_t result = { 0 };
-        EI_IMPULSE_ERROR err = run_impulse(&result, &acc_read_data, debug);
-        if (err != EI_IMPULSE_OK) {
-            ei_printf("Failed to run impulse (%d)\n", err);
-            break;
-        }
-    
-        acc_ready = 1;
-
-        // print the predictions
-        ei_printf("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
-            result.timing.dsp, result.timing.classification, result.timing.anomaly);
-        for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
-            ei_printf("    %s: %.5f\n", result.classification[ix].label, result.classification[ix].value);
-        }
-#if EI_CLASSIFIER_HAS_ANOMALY == 1
-        ei_printf("    anomaly score: %.3f\n", result.anomaly);
-#endif
-
-        ei_printf("Finished inferencing, raw data is stored in '%s'. Use AT+UPLOADFILE to send back to Edge Impulse.\n",
-            "file");
-
         ei_printf("Starting inferencing in 2 seconds...\n");
 
         // instead of wait_ms, we'll wait on the signal, this allows threads to cancel us...
@@ -110,8 +83,42 @@ void run_nn(bool debug) {
                 ei_printf("Inferencing stopped by user\r\n");
                 stop_inferencing = true;
             }
+        }
 
-        }        
+        if (stop_inferencing) {
+            break;
+        }
+
+        ei_printf("Sampling...\n");
+
+        ei_inertial_sample_start(&acc_data_callback, EI_CLASSIFIER_INTERVAL_MS);
+
+        // run the impulse: DSP, neural network and the Anomaly algorithm
+        ei_impulse_result_t result = { 0 };
+        EI_IMPULSE_ERROR err = run_impulse(&result, &acc_read_data, debug);
+        if (err != EI_IMPULSE_OK) {
+            ei_printf("Failed to run impulse (%d)\n", err);
+            break;
+        }
+
+        acc_ready = 1;
+
+        // print the predictions
+        ei_printf("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
+            result.timing.dsp, result.timing.classification, result.timing.anomaly);
+        for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
+            ei_printf("    %s: %.5f\n", result.classification[ix].label, result.classification[ix].value);
+        }
+#if EI_CLASSIFIER_HAS_ANOMALY == 1
+        ei_printf("    anomaly score: %.3f\n", result.anomaly);
+#endif
+
+        while(ei_get_serial_available() > 0) {
+            if(ei_get_serial_byte() == 'b') {
+                ei_printf("Inferencing stopped by user\r\n");
+                stop_inferencing = true;
+            }
+        }
     }
 }
 #elif defined(EI_CLASSIFIER_SENSOR) && EI_CLASSIFIER_SENSOR == EI_CLASSIFIER_SENSOR_MICROPHONE
@@ -139,15 +146,25 @@ void run_nn(bool debug) {
     uint32_t round = 0;
 
     while (stop_inferencing == false) {
-        //ei_printf("Starting inferencing in 2 seconds...\n");
+        ei_printf("Starting inferencing in 2 seconds...\n");
 
         // instead of wait_ms, we'll wait on the signal, this allows threads to cancel us...
-        // if (ei_sleep(2000) != EI_IMPULSE_OK) {
-        //     break;
-        // }
+        if (ei_sleep(2000) != EI_IMPULSE_OK) {
+            break;
+        }
 
-        ei_printf("Recording\n");
+        while(ei_get_serial_available() > 0) {
+            if(ei_get_serial_byte() == 'b') {
+                ei_printf("Inferencing stopped by user\r\n");
+                stop_inferencing = true;
+            }
+        }
 
+        if (stop_inferencing) {
+            break;
+        }
+
+        ei_printf("Recording...\n");
 
         bool m = ei_microphone_inference_record();
         if (!m) {
@@ -155,14 +172,13 @@ void run_nn(bool debug) {
             break;
         }
 
-        ei_printf("Recording OK\n");
+        ei_printf("Recording done\n");
 
         signal_t signal;
         signal.total_length = EI_CLASSIFIER_RAW_SAMPLE_COUNT;
-        signal.get_data = &ei_microphone_audio_signal_get_data;        
+        signal.get_data = &ei_microphone_audio_signal_get_data;
         ei_impulse_result_t result = { 0 };
 
-        
         round = loop_time.read_ms();
 
         EI_IMPULSE_ERROR r = run_classifier(&signal, &result, debug);
@@ -170,8 +186,6 @@ void run_nn(bool debug) {
             ei_printf("ERR: Failed to run classifier (%d)\n", r);
             break;
         }
-
-        ei_printf("time: %d\r\n", loop_time.read_ms() - round);
 
         // print the predictions
         ei_printf("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
@@ -188,8 +202,7 @@ void run_nn(bool debug) {
                 ei_printf("Inferencing stopped by user\r\n");
                 stop_inferencing = true;
             }
-
-        }        
+        }
     }
 
     ei_microphone_inference_end();
