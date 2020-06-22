@@ -20,53 +20,12 @@
  * SOFTWARE.
  */
 
-#ifndef _EI_CLASSIFIER_PORTING_H_
-#define _EI_CLASSIFIER_PORTING_H_
-
-#include <stdint.h>
 #include "edge-impulse-sdk/tensorflow/lite/micro/debug_log.h"
+#include "../ei_classifier_porting.h"
+#include <stdio.h>
+#include <stdarg.h>
 
-typedef enum {
-    EI_IMPULSE_OK = 0,
-    EI_IMPULSE_ERROR_SHAPES_DONT_MATCH = -1,
-    EI_IMPULSE_CANCELED = -2,
-    EI_IMPULSE_TFLITE_ERROR = -3,
-    EI_IMPULSE_DSP_ERROR = -5,
-    EI_IMPULSE_TFLITE_ARENA_ALLOC_FAILED = -6,
-    EI_IMPULSE_CUBEAI_ERROR = -7
-} EI_IMPULSE_ERROR;
-
-/**
- * Cancelable sleep, can be triggered with signal from other thread
- */
-EI_IMPULSE_ERROR ei_sleep(int32_t time_ms);
-
-/**
- * Check if the sampler thread was canceled, use this in conjunction with
- * the same signaling mechanism as ei_sleep
- */
-EI_IMPULSE_ERROR ei_run_impulse_check_canceled();
-
-/**
- * Read the millisecond timer
- */
-uint64_t ei_read_timer_ms();
-
-/**
- * Read the microsecond timer
- */
-uint64_t ei_read_timer_us();
-
-/**
- * Print wrapper around printf()
- * This is used internally to print debug information.
- */
-void ei_printf(const char *format, ...);
-
-/**
- * Override this function if your target cannot properly print floating points
- * If not overriden, this will be sent through `ei_printf()`.
- */
-void ei_printf_float(float f);
-
-#endif // _EI_CLASSIFIER_PORTING_H_
+// On mbed platforms, we set up a serial port and write to it for debug logging.
+extern "C" void DebugLog(const char* s) {
+    ei_printf("%s", s);
+}
