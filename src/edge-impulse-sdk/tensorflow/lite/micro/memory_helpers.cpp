@@ -15,9 +15,14 @@ limitations under the License.
 
 #include "edge-impulse-sdk/tensorflow/lite/micro/memory_helpers.h"
 
+#include <cstddef>
 #include <cstdint>
 
+#include "edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/flatbuffers.h"  // from @flatbuffers
+#include "edge-impulse-sdk/tensorflow/lite/c/common.h"
+#include "edge-impulse-sdk/tensorflow/lite/core/api/error_reporter.h"
 #include "edge-impulse-sdk/tensorflow/lite/core/api/flatbuffer_conversions.h"
+#include "edge-impulse-sdk/tensorflow/lite/schema/schema_generated.h"
 
 namespace tflite {
 
@@ -79,8 +84,12 @@ TfLiteStatus BytesRequiredForTensor(const tflite::Tensor& flatbuffer_tensor,
                                     size_t* bytes, size_t* type_size,
                                     ErrorReporter* error_reporter) {
   int element_count = 1;
-  for (size_t n = 0; n < flatbuffer_tensor.shape()->Length(); ++n) {
-    element_count *= flatbuffer_tensor.shape()->Get(n);
+  // If flatbuffer_tensor.shape == nullptr, then flatbuffer_tensor is a scalar
+  // so has 1 element.
+  if (flatbuffer_tensor.shape() != nullptr) {
+    for (size_t n = 0; n < flatbuffer_tensor.shape()->Length(); ++n) {
+      element_count *= flatbuffer_tensor.shape()->Get(n);
+    }
   }
 
   TfLiteType tf_lite_type;

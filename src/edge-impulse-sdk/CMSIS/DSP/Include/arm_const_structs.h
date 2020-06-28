@@ -33,6 +33,10 @@
 #include "edge-impulse-sdk/CMSIS/DSP/Include/arm_math.h"
 #include "edge-impulse-sdk/CMSIS/DSP/Include/arm_common_tables.h"
 
+#ifdef   __cplusplus
+extern "C"
+{
+#endif
    extern const arm_cfft_instance_f64 arm_cfft_sR_f64_len16;
    extern const arm_cfft_instance_f64 arm_cfft_sR_f64_len32;
    extern const arm_cfft_instance_f64 arm_cfft_sR_f64_len64;
@@ -73,4 +77,9 @@
    extern const arm_cfft_instance_q15 arm_cfft_sR_q15_len2048;
    extern const arm_cfft_instance_q15 arm_cfft_sR_q15_len4096;
 
+#ifdef   __cplusplus
+}
 #endif
+
+#endif
+

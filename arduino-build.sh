@@ -1,5 +1,5 @@
 #!/bin/bash
-PROJECT=edge-impulse.ino
+PROJECT=firmware-arduino-nano-33-ble-sense
 BOARD=arduino:mbed:nano33ble
 COMMAND=$1
 
@@ -27,7 +27,7 @@ FLAGS+=" -mfpu=fpv4-sp-d16"
 if [ "$COMMAND" = "--build" ];
 then
 	echo "Building $PROJECT"
-	arduino-cli compile --fqbn  $BOARD --build-properties build.extra_flags="$INCLUDE $FLAGS" $PROJECT &
+	arduino-cli compile --fqbn  $BOARD --build-properties build.extra_flags="$INCLUDE $FLAGS" --output-dir . &
 	pid=$! # Process Id of the previous running command
 	while kill -0 $pid 2>/dev/null
 	do
@@ -43,12 +43,12 @@ then
 	fi
 elif [ "$COMMAND" = "--flash" ];
 then
-	arduino-cli upload -p $(arduino-cli board list | grep Arduino | cut -d ' ' -f1) --fqbn $BOARD -i *.bin
+	arduino-cli upload -p $(arduino-cli board list | grep Arduino | cut -d ' ' -f1) --fqbn $BOARD --input-dir .
 elif [ "$COMMAND" = "--all" ];
 then
-	arduino-cli compile --fqbn  $BOARD --build-properties build.extra_flags="$INCLUDE $FLAGS" $PROJECT
+	arduino-cli compile --fqbn  $BOARD --build-properties build.extra_flags="$INCLUDE $FLAGS"
 	status=$?
-	[ $status -eq 0 ] && arduino-cli upload -p $(arduino-cli board list | grep Arduino | cut -d ' ' -f1) --fqbn $BOARD -i *.bin
+	[ $status -eq 0 ] && arduino-cli upload -p $(arduino-cli board list | grep Arduino | cut -d ' ' -f1) --fqbn $BOARD --input-dir .
 else
 	echo "Nothing to do for target"
 fi

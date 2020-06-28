@@ -15,6 +15,9 @@ limitations under the License.
 #ifndef TENSORFLOW_LITE_MICRO_MEMORY_HELPERS_H_
 #define TENSORFLOW_LITE_MICRO_MEMORY_HELPERS_H_
 
+#include <cstddef>
+#include <cstdint>
+
 #include "edge-impulse-sdk/tensorflow/lite/c/common.h"
 #include "edge-impulse-sdk/tensorflow/lite/core/api/error_reporter.h"
 #include "edge-impulse-sdk/tensorflow/lite/schema/schema_generated.h"

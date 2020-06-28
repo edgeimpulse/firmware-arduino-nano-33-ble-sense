@@ -15,9 +15,15 @@ limitations under the License.
 #ifndef TENSORFLOW_LITE_KERNELS_INTERNAL_REFERENCE_SUB_H_
 #define TENSORFLOW_LITE_KERNELS_INTERNAL_REFERENCE_SUB_H_
 
-#include "edge-impulse-sdk/third_party/gemmlowp/fixedpoint/fixedpoint.h"
+#include <stdint.h>
+
+#include <algorithm>
+#include <limits>
+
 #include "edge-impulse-sdk/third_party/ruy/ruy/profiler/instrumentation.h"  // from @ruy
 #include "edge-impulse-sdk/tensorflow/lite/kernels/internal/common.h"
+#include "edge-impulse-sdk/tensorflow/lite/kernels/internal/compatibility.h"
+#include "edge-impulse-sdk/tensorflow/lite/kernels/internal/types.h"
 
 namespace tflite {
 

@@ -15,7 +15,10 @@ limitations under the License.
 
 #include "edge-impulse-sdk/tensorflow/lite/micro/micro_error_reporter.h"
 
+#include <cstdarg>
+
 #ifndef TF_LITE_STRIP_ERROR_STRINGS
+#include "edge-impulse-sdk/tensorflow/lite/micro/debug_log.h"
 #include "edge-impulse-sdk/tensorflow/lite/micro/micro_string.h"
 #endif
 
