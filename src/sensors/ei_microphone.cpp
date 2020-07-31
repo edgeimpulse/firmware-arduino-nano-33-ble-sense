@@ -30,6 +30,7 @@
 #include "sensor_aq_mbedtls_hs256.h"
 #include "sensor_aq_none.h"
 #include "edge-impulse-sdk/CMSIS/DSP/Include/arm_math.h"
+#include "edge-impulse-sdk/dsp/numpy.hpp"
 
 
 #define AUDIO_SAMPLING_FREQUENCY            16000
@@ -47,6 +48,8 @@ typedef struct {
 extern ei_config_t *ei_config_get_config();
 extern DigitalOut led;
 
+using namespace ei;
+
 static size_t ei_write(const void*, size_t size, size_t count, EI_SENSOR_AQ_STREAM*)
 {
     ei_printf("Writing: %d\r\n", count);
@@ -60,7 +63,7 @@ static int ei_seek(EI_SENSOR_AQ_STREAM*, long int offset, int origin)
 }
 
 /* Private variables ------------------------------------------------------- */
-static signed short sampleBuffer[2048];
+static signed short *sampleBuffer;
 static bool is_uploaded = false;
 static bool record_ready = false;
 static uint32_t headerOffset;
@@ -107,6 +110,7 @@ static void audio_buffer_callback(uint32_t n_bytes)
     if(current_sample >= (samples_required << 1)) {
         PDM.end();
         record_ready = false;
+        free(sampleBuffer);
     }
 }
 
@@ -300,6 +304,14 @@ bool ei_microphone_inference_start(uint32_t n_samples)
         return false;
     }
 
+    sampleBuffer = (int16_t *)malloc((n_samples >> 1) * sizeof(int16_t));
+
+    if(sampleBuffer == NULL) {
+        free(inference.buffers[0]);
+        free(inference.buffers[1]);
+        return false;
+    }
+
     inference.buf_select = 0;
     inference.buf_count  = 0;
     inference.n_samples  = n_samples;
@@ -313,8 +325,7 @@ bool ei_microphone_inference_start(uint32_t n_samples)
     // optionally set the gain, defaults to 20
     PDM.setGain(80);
 
-    //ei_printf("Sector size: %d nblocks: %d\r\n", ei_nano_fs_get_block_size(), n_sample_blocks);
-    PDM.setBufferSize(ei_nano_fs_get_block_size());
+    PDM.setBufferSize((n_samples >> 1) * sizeof(int16_t));
 
     // initialize PDM with:
     // - one channel (mono mode)
@@ -329,29 +340,46 @@ bool ei_microphone_inference_start(uint32_t n_samples)
 
 }
 
+/**
+ * @brief      Wait for a full buffer
+ *
+ * @return     In case of an buffer overrun return false
+ */
 bool ei_microphone_inference_record(void)
 {
-    inference.buf_ready = 0;
-    inference.buf_count = 0;
+    bool ret = true;
 
-    while(inference.buf_ready == 0) {
-        ThisThread::sleep_for(10);
+    if (inference.buf_ready == 1) {
+        ei_printf(
+            "Error sample buffer overrun. Increase the number of sampler per slice "
+            "(EI_CLASSIFIER_SLICE_SIZE)\n");
+        ret = false;
+    }
+
+    while (inference.buf_ready == 0) {
+        ThisThread::sleep_for(1);
     }
 
     inference.buf_ready = 0;
 
-    return true;
+    return ret;
 }
 
+/**
+ * @brief      Reset buffer counters for non-continuous inferecing
+ */
+void ei_microphone_inference_reset_buffers(void)
+{
+    inference.buf_ready = 0;
+    inference.buf_count = 0;
+}
 
 /**
  * Get raw audio signal data
  */
 int ei_microphone_audio_signal_get_data(size_t offset, size_t length, float *out_ptr)
 {
-    arm_q15_to_float(&inference.buffers[inference.buf_select ^ 1][offset], out_ptr, length);
-
-    return 0;
+    return numpy::int16_to_float(&inference.buffers[inference.buf_select ^ 1][offset], out_ptr, length);
 }
 
 
@@ -360,6 +388,7 @@ bool ei_microphone_inference_end(void)
     PDM.end();
     free(inference.buffers[0]);
     free(inference.buffers[1]);
+    free(sampleBuffer);
 }
 
 /**
@@ -395,6 +424,12 @@ bool ei_microphone_sample_start(void)
     current_sample = 0;
 
     is_uploaded = false;
+
+    sampleBuffer = (int16_t *)malloc(ei_nano_fs_get_block_size());
+
+    if (sampleBuffer == NULL) {
+        return false;
+    }
 
     // configure the data receive callback
     PDM.onReceive(&pdm_data_ready_callback);

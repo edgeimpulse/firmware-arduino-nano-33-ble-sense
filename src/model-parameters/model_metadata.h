@@ -43,6 +43,8 @@
 #define EI_CLASSIFIER_TFLITE_ARENA_SIZE          3483
 #define EI_CLASSIFIER_INFERENCING_ENGINE         EI_CLASSIFIER_TFLITE
 #define EI_CLASSIFIER_SENSOR                     EI_CLASSIFIER_SENSOR_ACCELEROMETER
+#define EI_CLASSIFIER_SLICE_SIZE                 8000
+#define EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW    ((EI_CLASSIFIER_RAW_SAMPLE_COUNT / EI_CLASSIFIER_SLICE_SIZE) / 2)
 
 const char* ei_classifier_inferencing_categories[] = { "idle", "snake", "updown", "wave" };
 

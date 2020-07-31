@@ -104,6 +104,7 @@ void ei_main() {
 
     ei_at_register_generic_cmds();
     ei_at_cmd_register("RUNIMPULSE", "Run the impulse", run_nn_normal);
+    ei_at_cmd_register("RUNIMPULSECONT", "Run the impulse continuously", run_nn_continuous_normal);
 
     repl.start_repl();
     main_application_queue.dispatch_forever();
