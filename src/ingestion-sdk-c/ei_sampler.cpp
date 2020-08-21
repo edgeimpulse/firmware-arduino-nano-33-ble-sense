@@ -32,7 +32,6 @@
 #include "sensor_aq_mbedtls_hs256.h"
 
 
-using namespace mbed;
 using namespace rtos;
 using namespace events;
 
@@ -285,7 +284,7 @@ static void finish_and_upload(char *filename, uint32_t sample_length_ms)
 
     ei_printf("[1/1] Uploading file to Edge Impulse...\n");
 
-    Timer upload_timer;
+    mbed::Timer upload_timer;
     upload_timer.start();
 
     ei_printf("Not uploading file, not connected to WiFi. Used buffer, from=%lu, to=%lu.\n", 0, write_addr + headerOffset);//sample_buffer_size + headerOffset);

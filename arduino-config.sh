@@ -3,7 +3,7 @@
 #First we update the index of available boards
 arduino-cli core update-index
 #and download the core needed with specified version
-arduino-cli core install arduino:mbed@1.1.4
+arduino-cli core install arduino:mbed@1.1.6
 
 #We need to do same for the libraries
 arduino-cli lib update-index

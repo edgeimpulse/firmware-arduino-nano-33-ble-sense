@@ -29,6 +29,10 @@
 #define EI_CLASSIFIER_SENSOR_MICROPHONE          1
 #define EI_CLASSIFIER_SENSOR_ACCELEROMETER       2
 
+// These must match the enum values in TensorFlow Lite's "TfLiteType"
+#define EI_CLASSIFIER_DATATYPE_FLOAT32           1
+#define EI_CLASSIFIER_DATATYPE_INT8              9
+
 #define EI_CLASSIFIER_NN_INPUT_FRAME_SIZE        33
 #define EI_CLASSIFIER_RAW_SAMPLE_COUNT           125
 #define EI_CLASSIFIER_RAW_SAMPLES_PER_FRAME      3
@@ -41,10 +45,18 @@
 #define EI_CLASSIFIER_HAS_ANOMALY                1
 #define EI_CLASSIFIER_FREQUENCY                  62.5
 #define EI_CLASSIFIER_TFLITE_ARENA_SIZE          3483
+#define EI_CLASSIFIER_TFLITE_INPUT_DATATYPE      EI_CLASSIFIER_DATATYPE_FLOAT32
+#define EI_CLASSIFIER_TFLITE_INPUT_QUANTIZED     0
+#define EI_CLASSIFIER_TFLITE_INPUT_SCALE         0
+#define EI_CLASSIFIER_TFLITE_INPUT_ZEROPOINT     0
+#define EI_CLASSIFIER_TFLITE_OUTPUT_DATATYPE     EI_CLASSIFIER_DATATYPE_FLOAT32
+#define EI_CLASSIFIER_TFLITE_OUTPUT_QUANTIZED    0
+#define EI_CLASSIFIER_TFLITE_OUTPUT_SCALE        0
+#define EI_CLASSIFIER_TFLITE_OUTPUT_ZEROPOINT    0
 #define EI_CLASSIFIER_INFERENCING_ENGINE         EI_CLASSIFIER_TFLITE
 #define EI_CLASSIFIER_SENSOR                     EI_CLASSIFIER_SENSOR_ACCELEROMETER
-#define EI_CLASSIFIER_SLICE_SIZE                 8000
-#define EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW    ((EI_CLASSIFIER_RAW_SAMPLE_COUNT / EI_CLASSIFIER_SLICE_SIZE) / 2)
+#define EI_CLASSIFIER_SLICE_SIZE                 (EI_CLASSIFIER_RAW_SAMPLE_COUNT / EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW)
+#define EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW    2
 
 const char* ei_classifier_inferencing_categories[] = { "idle", "snake", "updown", "wave" };
 
@@ -55,6 +67,9 @@ typedef struct {
     bool minimum;
     bool maximum;
     bool rms;
+    bool stdev;
+    bool skewness;
+    bool kurtosis;
 } ei_dsp_config_flatten_t;
 
 typedef struct {

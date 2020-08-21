@@ -36,7 +36,7 @@
 using namespace std;
 
 #ifdef ARDUINO
-#define SerialStream Stream
+#define SerialStream mbed::Stream
 #else
 #define SerialStream RawSerial
 #endif
@@ -127,15 +127,15 @@ public:
      *                 If your function is asynchronous, return 'false' and call 'reprintReplState' when the task is done.
      *
      */
-    void start(Callback<bool(const char*)> callback) {
+    void start(mbed::Callback<bool(const char*)> callback) {
         reprintReplState();
-        
+
         #ifdef ARDUINO
-        queue->call_every(10, Callback<void()>(this, &Repl::callback_irq));
+        queue->call_every(10, mbed::Callback<void()>(this, &Repl::callback_irq));
         #else
         pc->attach(Callback<void()>(this, &Repl::callback_irq));
         #endif
-        
+
 
 
         commandCallback = callback;
@@ -284,7 +284,7 @@ private:
                 break;
             case 0x1b: /* control character */
                 // wait until next a-zA-Z
-                inControlChar = true;                
+                inControlChar = true;
                 pc->printf("\033[s"); // save current position
 
 
@@ -313,17 +313,17 @@ private:
         }
     }
 
-    void callback_irq() {    
+    void callback_irq() {
         #ifdef ARDUINO
         while(ei_get_serial_available() > 0) {
             rx_callback(ei_get_serial_byte());
         }
         #else
         if (pc->readable()) {
-            char c = pc->getc();            
+            char c = pc->getc();
             queue->call(callback(this, &Repl::rx_callback), c);
         }
-        #endif 
+        #endif
     }
 
     void handleBackspace() {
@@ -385,7 +385,7 @@ private:
     vector<char> controlSequence;
     vector<string> history;
     size_t historyPosition;
-    Callback<bool(const char*)> commandCallback;
+    mbed::Callback<bool(const char*)> commandCallback;
 };
 
 #endif // _EDGE_IMPULSE_SDK_REPL_H_

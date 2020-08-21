@@ -27,9 +27,6 @@
 #include "FlashIAP.h"
 //#include "setup.h"
 
-using namespace mbed;
-
-
 /* Private types & constants ---------------------------------------------- */
 
 /**
@@ -46,7 +43,7 @@ typedef struct
 	uint32_t config_file_address;			/*!< Start address of config file*/
 	uint32_t sample_start_address;			/*!< Start of sample storage mem */
 	bool     fs_init;						/*!< FS is successfully init  	 */
-	
+
 }ei_nano_fs_t;
 
 /** 32-bit align write buffer size */
@@ -55,20 +52,20 @@ typedef struct
 #define SECTOR_ALIGN(a, sec_size)	((a & (sec_size-1)) ? (a & ~(sec_size-1)) + sec_size : a)
 
 /* Private variables ------------------------------------------------------- */
-static FlashIAP iap;
+static mbed::FlashIAP iap;
 static ei_nano_fs_t nano_fs = {0};
 
 /* Public functions -------------------------------------------------------- */
 
 /**
- * @brief      Init Flash pheripheral for reading & writing and set all 
+ * @brief      Init Flash pheripheral for reading & writing and set all
  * 			   parameters for the file system.
  * @return     true if succesful else false
  */
 bool ei_nano_fs_init(void)
 {
 	iap.init();
-	
+
 	/* Setup addresses for fs */
 	nano_fs.sector_size = iap.get_sector_size(iap.get_flash_start() + iap.get_flash_size() - 1UL);
     nano_fs.page_size = iap.get_page_size();
@@ -76,10 +73,10 @@ bool ei_nano_fs_init(void)
     nano_fs.sample_start_address = SECTOR_ALIGN(FLASHIAP_APP_ROM_END_ADDR, nano_fs.sector_size);
 
     //ei_printf("Start config: %d start sample: %d size sample: %d\r\n", nano_fs.config_file_address,
-    //	nano_fs.sample_start_address, nano_fs.config_file_address - nano_fs.sample_start_address);       
+    //	nano_fs.sample_start_address, nano_fs.config_file_address - nano_fs.sample_start_address);
 
 	/* Check correct init of all parameters */
-	if((nano_fs.sector_size == 0) || (nano_fs.page_size == 0) 
+	if((nano_fs.sector_size == 0) || (nano_fs.page_size == 0)
 		|| (nano_fs.config_file_address == 0) || (nano_fs.sample_start_address == 0)) {
 		nano_fs.fs_init = false;
 	}
@@ -116,7 +113,7 @@ int ei_nano_fs_load_config(uint32_t *config, uint32_t config_size)
 		ret = NANO_FS_CMD_NOT_INIT;
 	}
 
-	return (int)ret;	
+	return (int)ret;
 }
 
 /**
@@ -130,7 +127,7 @@ int ei_nano_fs_load_config(uint32_t *config, uint32_t config_size)
 int ei_nano_fs_save_config(const uint32_t *config, uint32_t config_size)
 {
 	ei_nano_ret_t ret;
-	
+
 	if(config == NULL) {
 		ret = NANO_FS_CMD_NULL_POINTER;
 	}
@@ -187,7 +184,7 @@ int ei_nano_fs_erase_sampledata(uint32_t start_block, uint32_t end_address)
 		ret = NANO_FS_CMD_NOT_INIT;
 	}
 
-	return ret;	
+	return ret;
 }
 
 int ei_nano_fs_write_sample_block(const void *sample_buffer, uint32_t address_offset)
@@ -233,7 +230,7 @@ int ei_nano_fs_write_samples(const void *sample_buffer, uint32_t address_offset,
 int ei_nano_fs_read_sample_data(void *sample_buffer, uint32_t address_offset, uint32_t n_read_bytes)
 {
 	ei_nano_ret_t ret;
-	
+
 	if(sample_buffer == NULL) {
 		ret = NANO_FS_CMD_NULL_POINTER;
 	}
@@ -246,7 +243,7 @@ int ei_nano_fs_read_sample_data(void *sample_buffer, uint32_t address_offset, ui
 	}
 	else {
 		ret = NANO_FS_CMD_NOT_INIT;
-	}	
+	}
 
 	return (int)ret;
 }
@@ -270,4 +267,3 @@ uint32_t ei_nano_fs_get_n_available_sample_blocks(void)
 	}
 	return n_sample_blocks;
 }
-

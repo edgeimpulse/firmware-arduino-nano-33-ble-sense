@@ -78,9 +78,9 @@ public:
         // we declare this on the heap as we need to be able to dispose and restart the thread
         // and Mbed cannot start a stopped thread
         _cmd_thread = new Thread(osPriorityNormal, _cmd_thread_stack_size, _cmd_thread_stack_mem, "at-cmd-thread");
-        _cmd_thread->start(callback(this, &AtCmdRepl::cmd_thread_main));
+        _cmd_thread->start(mbed::callback(this, &AtCmdRepl::cmd_thread_main));
 
-        _repl.start(callback(this, &AtCmdRepl::exec_command));
+        _repl.start(mbed::callback(this, &AtCmdRepl::exec_command));
     }
 
     /**
@@ -100,7 +100,7 @@ public:
 #ifndef ARDUINO
         // we need to figure out a way to get this to work...
         // we press 'b' to exit any running tasks in the ST firmware...
-        _repl.getSerial()->attach(callback(this, &AtCmdRepl::break_inference_loop_irq));
+        _repl.getSerial()->attach(mbed::callback(this, &AtCmdRepl::break_inference_loop_irq));
 #endif
 
         // execution is done on a different thread (so we can cancel it)
@@ -108,7 +108,7 @@ public:
         ei_at_mail_t *mail = _mail_box.alloc();
         if (!mail) {
             printf("Failed to allocate item in mail box!\n");
-            _repl.start(callback(this, &AtCmdRepl::exec_command));
+            _repl.start(mbed::callback(this, &AtCmdRepl::exec_command));
             return false;
         }
         memcpy(mail->cmd, cmd, strlen(cmd) + 1);
@@ -138,13 +138,13 @@ public:
 
             // have to restart the thread... have to make new one, because Mbed OS does not allow restarting terminated threads
             _cmd_thread = new Thread(priority, _cmd_thread_stack_size, _cmd_thread_stack_mem, "at-cmd-thread");
-            _cmd_thread->start(callback(this, &AtCmdRepl::cmd_thread_main));
+            _cmd_thread->start(mbed::callback(this, &AtCmdRepl::cmd_thread_main));
         }
 
         _mail_box.free(mail);
 
         // and command is handled, restart REPL
-        _repl.start(callback(this, &AtCmdRepl::exec_command));
+        _repl.start(mbed::callback(this, &AtCmdRepl::exec_command));
 
         _terminate_thread = false;
 
@@ -173,7 +173,7 @@ private:
         while (1) {
             osEvent evt = _mail_box.get();
             if (evt.status == osEventMail) {
-                ei_at_mail_t *mail = (ei_at_mail_t*)evt.value.p;                
+                ei_at_mail_t *mail = (ei_at_mail_t*)evt.value.p;
                 ei_at_cmd_handle(mail->cmd);
 
                 // signal to other thread

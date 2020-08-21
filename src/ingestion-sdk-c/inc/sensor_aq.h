@@ -28,7 +28,6 @@
 #include "qcbor.h"
 #include "mbed.h"
 
-using namespace mbed;
 using namespace rtos;
 using namespace events;
 
@@ -126,9 +125,9 @@ typedef struct {
 
     // function signatures
 #ifdef __MBED__
-    Callback<size_t(const void*, size_t, size_t, EI_SENSOR_AQ_STREAM*)> fwrite;
-    Callback<int(EI_SENSOR_AQ_STREAM*, long int, int)> fseek;
-    Callback<time_t(time_t*)> time;
+    mbed::Callback<size_t(const void*, size_t, size_t, EI_SENSOR_AQ_STREAM*)> fwrite;
+    mbed::Callback<int(EI_SENSOR_AQ_STREAM*, long int, int)> fseek;
+    mbed::Callback<time_t(time_t*)> time;
 #else
     size_t (*fwrite)(const void*, size_t, size_t, EI_SENSOR_AQ_STREAM*);
     int    (*fseek)(EI_SENSOR_AQ_STREAM*, long int, int);

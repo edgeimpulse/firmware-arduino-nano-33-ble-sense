@@ -11,7 +11,7 @@ EventQueue main_application_queue;
 static unsigned char repl_stack[8 * 1024];
 static AtCmdRepl repl(&main_application_queue, ei_get_serial(), sizeof(repl_stack), repl_stack);
 
-DigitalOut led(LED1);
+mbed::DigitalOut led(LED1);
 
 void print_memory_info() {
     // allocate enough room for every thread's stack statistics
@@ -32,7 +32,7 @@ void print_memory_info() {
 
 
 #ifdef __MBED__
-static bool ei_nano_fs_read_buffer(size_t begin, size_t length, Callback<void(uint8_t*, size_t)> data_fn) {
+static bool ei_nano_fs_read_buffer(size_t begin, size_t length, mbed::Callback<void(uint8_t*, size_t)> data_fn) {
 #else
 static bool ei_nano_fs_read_buffer(size_t begin, size_t length, void(*data_fn)(uint8_t*, size_t)) {
 #endif

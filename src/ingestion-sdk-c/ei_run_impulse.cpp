@@ -140,7 +140,7 @@ void run_nn(bool debug)
 
     ei_printf("Starting inferencing, press 'b' to break\n");
 
-    Timer loop_time;
+    mbed::Timer loop_time;
 
     loop_time.start();
     uint32_t round = 0;
@@ -213,7 +213,7 @@ void run_nn(bool debug)
 void run_nn_continuous(bool debug)
 {
     bool stop_inferencing = false;
-    int print_results = -(EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW * 2);
+    int print_results = -(EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW);
     // summary of inferencing settings (from model_metadata.h)
     ei_printf("Inferencing settings:\n");
     ei_printf("\tInterval: %.2f ms.\n", (float)EI_CLASSIFIER_INTERVAL_MS);
@@ -227,7 +227,7 @@ void run_nn_continuous(bool debug)
     run_classifier_init();
     ei_microphone_inference_start(EI_CLASSIFIER_SLICE_SIZE);
 
-    while (stop_inferencing == false) {        
+    while (stop_inferencing == false) {
 
         bool m = ei_microphone_inference_record();
         if (!m) {
@@ -246,7 +246,7 @@ void run_nn_continuous(bool debug)
             break;
         }
 
-        if (++print_results >= EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW) {
+        if (++print_results >= (EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW >> 1)) {
             // print the predictions
             ei_printf("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
                       result.timing.dsp, result.timing.classification, result.timing.anomaly);

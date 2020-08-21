@@ -27,7 +27,7 @@
 
 // maximum number of commands
 #ifndef EI_AT_MAX_CMDS
-#define EI_AT_MAX_CMDS      30
+#define EI_AT_MAX_CMDS      32
 #endif // EI_AT_MAX_CMDS
 
 typedef struct {

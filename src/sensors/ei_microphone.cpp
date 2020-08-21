@@ -46,7 +46,7 @@ typedef struct {
 
 /* Extern declared --------------------------------------------------------- */
 extern ei_config_t *ei_config_get_config();
-extern DigitalOut led;
+extern mbed::DigitalOut led;
 
 using namespace ei;
 
@@ -159,13 +159,13 @@ static void finish_and_upload(char *filename, uint32_t sample_length_ms) {
 
     ei_printf("Done sampling, total bytes collected: %u\n", current_sample);
 
-    Ticker t;
+    mbed::Ticker t;
     t.attach(&ei_microphone_blink, 1.0f);
 
 
     ei_printf("[1/1] Uploading file to Edge Impulse...\n");
 
-    Timer upload_timer;
+    mbed::Timer upload_timer;
     upload_timer.start();
 
     //ei_printf("Not uploading file, not connected to WiFi. Used buffer, type=%d, from=%lu, to=%lu, sensor_name=%s, sensor_units=%s.\n",
@@ -351,8 +351,8 @@ bool ei_microphone_inference_record(void)
 
     if (inference.buf_ready == 1) {
         ei_printf(
-            "Error sample buffer overrun. Increase the number of sampler per slice "
-            "(EI_CLASSIFIER_SLICE_SIZE)\n");
+            "Error sample buffer overrun. Decrease the number of slices per model window "
+            "(EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW)\n");
         ret = false;
     }
 

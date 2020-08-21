@@ -26,7 +26,6 @@
 #include "mbed.h"
 
 
-using namespace mbed;
 using namespace rtos;
 using namespace events;
 

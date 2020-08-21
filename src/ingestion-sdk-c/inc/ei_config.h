@@ -83,7 +83,7 @@ typedef struct {
     // List files function, invoke the function pointer for every file
     // you have on the file system
 #ifdef __MBED__
-    void (*list_files)(Callback<void(char*)> data_fn);
+    void (*list_files)(mbed::Callback<void(char*)> data_fn);
 #else
     void (*list_files)(void(*data_fn)(char*));
 #endif
@@ -92,7 +92,7 @@ typedef struct {
     // of memory for each section of the file you're reading
     // Return false if the file does not exist
 #ifdef __MBED__
-    bool (*read_file)(const char *path, Callback<void(uint8_t*, size_t)> data_fn);
+    bool (*read_file)(const char *path, mbed::Callback<void(uint8_t*, size_t)> data_fn);
 #else
     bool (*read_file)(const char *path, void(*data_fn)(uint8_t*, size_t));
 #endif
@@ -101,10 +101,10 @@ typedef struct {
     // of memory for each section of the buffer you're reading
     // Return false if the file does not exist
 #ifdef __MBED__
-    bool (*read_buffer)(size_t start, size_t length, Callback<void(uint8_t*, size_t)> data_fn);
+    bool (*read_buffer)(size_t start, size_t length, mbed::Callback<void(uint8_t*, size_t)> data_fn);
 #else
     bool (*read_buffer)(size_t start, size_t length, void(*data_fn)(uint8_t*, size_t));
-#endif    
+#endif
 
     /**
      * Unlink a single file from the file system
@@ -115,7 +115,7 @@ typedef struct {
     // Invoke the function pointer with each network you see
     // Return false if an error occured during scanning
 #ifdef __MBED__
-    bool (*scan_wifi)(Callback<void(const char*, ei_config_security_t, int8_t)> data_fn);
+    bool (*scan_wifi)(mbed::Callback<void(const char*, ei_config_security_t, int8_t)> data_fn);
 #else
     bool (*scan_wifi)(void(*data_fn)(const char *ssid, ei_config_security_t security, int8_t rssi));
 #endif
@@ -230,7 +230,7 @@ EI_CONFIG_ERROR ei_config_get_wifi(char ** ssid, char ** password, ei_config_sec
     else {
         *connected = false;
     }
-    
+
     if(ei_config_ctx->wifi_present) {
         *present = ei_config_ctx->wifi_present();
     }
