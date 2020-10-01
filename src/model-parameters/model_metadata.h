@@ -108,6 +108,17 @@ typedef struct {
     const char * spectral_power_edges;
 } ei_dsp_config_spectral_analysis_t;
 
+typedef struct {
+    int axes;
+    float frame_length;
+    float frame_stride;
+    int num_filters;
+    int fft_length;
+    int low_frequency;
+    int high_frequency;
+    int win_size;
+} ei_dsp_config_mfe_t;
+
 ei_dsp_config_spectral_analysis_t ei_dsp_config_237 = {
     3,
     1.00000f,
