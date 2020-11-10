@@ -38,7 +38,9 @@ typedef enum {
     EI_IMPULSE_DSP_ERROR = -5,
     EI_IMPULSE_TFLITE_ARENA_ALLOC_FAILED = -6,
     EI_IMPULSE_CUBEAI_ERROR = -7,
-    EI_IMPULSE_ALLOC_FAILED = -8
+    EI_IMPULSE_ALLOC_FAILED = -8,
+    EI_IMPULSE_ONLY_SUPPORTED_FOR_IMAGES = -9,
+    EI_IMPULSE_UNSUPPORTED_INFERENCING_ENGINE = -10
 } EI_IMPULSE_ERROR;
 
 /**
@@ -77,5 +79,63 @@ void ei_printf_float(float f);
 #if defined(__cplusplus) && EI_C_LINKAGE == 1
 }
 #endif // defined(__cplusplus) && EI_C_LINKAGE == 1
+
+// Load porting layer depending on target
+#ifndef EI_PORTING_ARDUINO
+#ifdef ARDUINO
+#define EI_PORTING_ARDUINO      1
+#else
+#define EI_PORTING_ARDUINO      0
+#endif
+#endif
+
+#ifndef EI_PORTING_ECM3532
+#ifdef ECM3532
+#define EI_PORTING_ECM3532      1
+#else
+#define EI_PORTING_ECM3532      0
+#endif
+#endif
+
+#ifndef EI_PORTING_MBED
+#ifdef __MBED__
+#define EI_PORTING_MBED      1
+#else
+#define EI_PORTING_MBED      0
+#endif
+#endif
+
+#ifndef EI_PORTING_POSIX
+#if defined (__unix__) || (defined (__APPLE__) && defined (__MACH__))
+#define EI_PORTING_POSIX      1
+#else
+#define EI_PORTING_POSIX      0
+#endif
+#endif
+
+#ifndef EI_PORTING_SILABS
+#if defined(EFR32MG12P332F1024GL125)
+#define EI_PORTING_SILABS      1
+#else
+#define EI_PORTING_SILABS      0
+#endif
+#endif
+
+#ifndef EI_PORTING_STM32_CUBEAI
+#if defined(USE_HAL_DRIVER) && !defined(__MBED__)
+#define EI_PORTING_STM32_CUBEAI      1
+#else
+#define EI_PORTING_STM32_CUBEAI      0
+#endif
+#endif
+
+#ifndef EI_PORTING_ZEPHYR
+#if defined(__ZEPHYR__)
+#define EI_PORTING_ZEPHYR      1
+#else
+#define EI_PORTING_ZEPHYR      0
+#endif
+#endif
+// End load porting layer depending on target
 
 #endif // _EI_CLASSIFIER_PORTING_H_

@@ -41,12 +41,12 @@ namespace {
 
 using namespace ei;
 
-__attribute__((unused)) int extract_spectral_analysis_features(signal_t *signal, matrix_t *output_matrix, void *config_ptr) {
+__attribute__((unused)) int extract_spectral_analysis_features(signal_t *signal, matrix_t *output_matrix, void *config_ptr, const float frequency) {
     ei_dsp_config_spectral_analysis_t config = *((ei_dsp_config_spectral_analysis_t*)config_ptr);
 
     int ret;
 
-    const float sampling_freq = EI_CLASSIFIER_FREQUENCY;
+    const float sampling_freq = frequency;
 
     // input matrix from the raw signal
     matrix_t input_matrix(signal->total_length / config.axes, config.axes);
@@ -126,7 +126,7 @@ __attribute__((unused)) int extract_spectral_analysis_features(signal_t *signal,
     return EIDSP_OK;
 }
 
-__attribute__((unused)) int extract_raw_features(signal_t *signal, matrix_t *output_matrix, void *config_ptr) {
+__attribute__((unused)) int extract_raw_features(signal_t *signal, matrix_t *output_matrix, void *config_ptr, const float frequency) {
     ei_dsp_config_raw_t config = *((ei_dsp_config_raw_t*)config_ptr);
 
     // input matrix from the raw signal
@@ -147,7 +147,7 @@ __attribute__((unused)) int extract_raw_features(signal_t *signal, matrix_t *out
     return EIDSP_OK;
 }
 
-__attribute__((unused)) int extract_flatten_features(signal_t *signal, matrix_t *output_matrix, void *config_ptr) {
+__attribute__((unused)) int extract_flatten_features(signal_t *signal, matrix_t *output_matrix, void *config_ptr, const float frequency) {
     ei_dsp_config_flatten_t config = *((ei_dsp_config_flatten_t*)config_ptr);
 
     uint32_t expected_matrix_size = 0;
@@ -253,15 +253,14 @@ static int preemphasized_audio_signal_get_data(size_t offset, size_t length, flo
     return preemphasis->get_data(offset, length, out_ptr);
 }
 
-__attribute__((unused)) int extract_mfcc_features(signal_t *signal, matrix_t *output_matrix, void *config_ptr) {
+__attribute__((unused)) int extract_mfcc_features(signal_t *signal, matrix_t *output_matrix, void *config_ptr, const float sampling_frequency) {
     ei_dsp_config_mfcc_t config = *((ei_dsp_config_mfcc_t*)config_ptr);
 
     if (config.axes != 1) {
         EIDSP_ERR(EIDSP_MATRIX_SIZE_MISMATCH);
     }
 
-    // @todo: move this to config
-    const uint32_t frequency = static_cast<uint32_t>(EI_CLASSIFIER_FREQUENCY);
+    const uint32_t frequency = static_cast<uint32_t>(sampling_frequency);
 
     // preemphasis class to preprocess the audio...
     class speechpy::processing::preemphasis pre(signal, config.pre_shift, config.pre_cof);
@@ -307,7 +306,7 @@ __attribute__((unused)) int extract_mfcc_features(signal_t *signal, matrix_t *ou
     return EIDSP_OK;
 }
 
-__attribute__((unused)) int extract_mfcc_per_slice_features(signal_t *signal, matrix_t *output_matrix, void *config_ptr) {
+__attribute__((unused)) int extract_mfcc_per_slice_features(signal_t *signal, matrix_t *output_matrix, void *config_ptr, const float sampling_frequency) {
     ei_dsp_config_mfcc_t config = *((ei_dsp_config_mfcc_t*)config_ptr);
 
     static bool first_run = false;
@@ -316,17 +315,16 @@ __attribute__((unused)) int extract_mfcc_per_slice_features(signal_t *signal, ma
         EIDSP_ERR(EIDSP_MATRIX_SIZE_MISMATCH);
     }
 
+    const uint32_t frequency = static_cast<uint32_t>(sampling_frequency);
+
     /* Fake an extra frame_length for stack frames calculations. There, 1 frame_length is always
     subtracted and there for never used. But skip the first slice to fit the feature_matrix
     buffer */
     if (first_run == true) {
-        signal->total_length += (size_t)(config.frame_length * (float)EI_CLASSIFIER_FREQUENCY);
+        signal->total_length += (size_t)(config.frame_length * (float)frequency);
     }
 
     first_run = true;
-
-    // @todo: move this to config
-    const uint32_t frequency = static_cast<uint32_t>(EI_CLASSIFIER_FREQUENCY);
 
     // preemphasis class to preprocess the audio...
     class speechpy::processing::preemphasis pre(signal, config.pre_shift, config.pre_cof);
@@ -366,15 +364,14 @@ __attribute__((unused)) int extract_mfcc_per_slice_features(signal_t *signal, ma
 }
 
 
-__attribute__((unused)) int extract_mfe_features(signal_t *signal, matrix_t *output_matrix, void *config_ptr) {
+__attribute__((unused)) int extract_mfe_features(signal_t *signal, matrix_t *output_matrix, void *config_ptr, const float sampling_frequency) {
     ei_dsp_config_mfe_t config = *((ei_dsp_config_mfe_t*)config_ptr);
 
     if (config.axes != 1) {
         EIDSP_ERR(EIDSP_MATRIX_SIZE_MISMATCH);
     }
 
-    // @todo: move this to config
-    const uint32_t frequency = static_cast<uint32_t>(EI_CLASSIFIER_FREQUENCY);
+    const uint32_t frequency = static_cast<uint32_t>(sampling_frequency);
 
     // calculate the size of the MFE matrix
     matrix_size_t out_matrix_size =
@@ -417,7 +414,7 @@ __attribute__((unused)) int extract_mfe_features(signal_t *signal, matrix_t *out
     return EIDSP_OK;
 }
 
-__attribute__((unused)) int extract_mfe_per_slice_features(signal_t *signal, matrix_t *output_matrix, void *config_ptr) {
+__attribute__((unused)) int extract_mfe_per_slice_features(signal_t *signal, matrix_t *output_matrix, void *config_ptr, const float sampling_frequency) {
     ei_dsp_config_mfe_t config = *((ei_dsp_config_mfe_t*)config_ptr);
 
     static bool first_run = false;
@@ -426,17 +423,16 @@ __attribute__((unused)) int extract_mfe_per_slice_features(signal_t *signal, mat
         EIDSP_ERR(EIDSP_MATRIX_SIZE_MISMATCH);
     }
 
+    const uint32_t frequency = static_cast<uint32_t>(sampling_frequency);
+
     /* Fake an extra frame_length for stack frames calculations. There, 1 frame_length is always
     subtracted and there for never used. But skip the first slice to fit the feature_matrix
     buffer */
     if (first_run == true) {
-        signal->total_length += (size_t)(config.frame_length * (float)EI_CLASSIFIER_FREQUENCY);
+        signal->total_length += (size_t)(config.frame_length * (float)frequency);
     }
 
     first_run = true;
-
-    // @todo: move this to config
-    const uint32_t frequency = static_cast<uint32_t>(EI_CLASSIFIER_FREQUENCY);
 
     // calculate the size of the MFE matrix
     matrix_size_t out_matrix_size =
@@ -472,14 +468,14 @@ __attribute__((unused)) int extract_mfe_per_slice_features(signal_t *signal, mat
     return EIDSP_OK;
 }
 
-__attribute__((unused)) int extract_image_features(signal_t *signal, matrix_t *output_matrix, void *config_ptr) {
+__attribute__((unused)) int extract_image_features(signal_t *signal, matrix_t *output_matrix, void *config_ptr, const float frequency) {
     ei_dsp_config_image_t config = *((ei_dsp_config_image_t*)config_ptr);
 
     int16_t channel_count = strcmp(config.channels, "Grayscale") == 0 ? 1 : 3;
 
-    if (output_matrix->rows * output_matrix->cols != EI_CLASSIFIER_INPUT_WIDTH * EI_CLASSIFIER_INPUT_HEIGHT * channel_count) {
+    if (output_matrix->rows * output_matrix->cols != static_cast<uint32_t>(EI_CLASSIFIER_INPUT_WIDTH * EI_CLASSIFIER_INPUT_HEIGHT * channel_count)) {
         ei_printf("out_matrix = %hu items\n", output_matrix->rows, output_matrix->cols);
-        ei_printf("calculated size = %hu items\n", EI_CLASSIFIER_INPUT_WIDTH * EI_CLASSIFIER_INPUT_HEIGHT * channel_count);
+        ei_printf("calculated size = %hu items\n", static_cast<uint32_t>(EI_CLASSIFIER_INPUT_WIDTH * EI_CLASSIFIER_INPUT_HEIGHT * channel_count));
         EIDSP_ERR(EIDSP_MATRIX_SIZE_MISMATCH);
     }
 
@@ -487,39 +483,94 @@ __attribute__((unused)) int extract_image_features(signal_t *signal, matrix_t *o
 
     // buffered read from the signal
     size_t bytes_left = signal->total_length;
-    for (size_t ix = 0; ix < signal->total_length; ix += 4096) {
-        size_t bytes_to_read = bytes_left > 4096 ? 4096 : bytes_left;
+    for (size_t ix = 0; ix < signal->total_length; ix += 1024) {
+        size_t elements_to_read = bytes_left > 1024 ? 1024 : bytes_left;
 
-        matrix_t input_matrix(bytes_to_read, config.axes);
+        matrix_t input_matrix(elements_to_read, config.axes);
         if (!input_matrix.buffer) {
             EIDSP_ERR(EIDSP_OUT_OF_MEM);
         }
-        signal->get_data(ix, bytes_to_read, input_matrix.buffer);
+        signal->get_data(ix, elements_to_read, input_matrix.buffer);
 
-        for (size_t jx = 0; jx < bytes_to_read; jx++) {
+        for (size_t jx = 0; jx < elements_to_read; jx++) {
             uint32_t pixel = static_cast<uint32_t>(input_matrix.buffer[jx]);
+
+            // rgb to 0..1
+            float r = static_cast<float>(pixel >> 16 & 0xff) / 255.0f;
+            float g = static_cast<float>(pixel >> 8 & 0xff) / 255.0f;
+            float b = static_cast<float>(pixel & 0xff) / 255.0f;
+
             if (channel_count == 3) {
-                // rgb to 0..1
-                output_matrix->buffer[output_ix++] = static_cast<float>(pixel >> 16 & 0xff) / 255.0f;
-                output_matrix->buffer[output_ix++] = static_cast<float>(pixel >> 8 & 0xff) / 255.0f;
-                output_matrix->buffer[output_ix++] = static_cast<float>(pixel & 0xff) / 255.0f;
+                output_matrix->buffer[output_ix++] = r;
+                output_matrix->buffer[output_ix++] = g;
+                output_matrix->buffer[output_ix++] = b;
             }
             else {
-                // grayscale conversion (also to 0..1)
-                float r = static_cast<float>(pixel >> 16 & 0xff) / 255.0f;
-                float g = static_cast<float>(pixel >> 8 & 0xff) / 255.0f;
-                float b = static_cast<float>(pixel & 0xff) / 255.0f;
                 // ITU-R 601-2 luma transform
                 // see: https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image.convert
-                output_matrix->buffer[output_ix++] = (0.299f * r) + (0.587f * g) + (0.114f * b);
+                float v = (0.299f * r) + (0.587f * g) + (0.114f * b);
+                output_matrix->buffer[output_ix++] = v;
             }
         }
 
-        bytes_left -= bytes_to_read;
+        bytes_left -= elements_to_read;
     }
 
     return EIDSP_OK;
 }
+
+#if EI_CLASSIFIER_TFLITE_INPUT_QUANTIZED == 1
+__attribute__((unused)) int extract_image_features_quantized(signal_t *signal, matrix_i8_t *output_matrix, void *config_ptr, const float frequency) {
+    ei_dsp_config_image_t config = *((ei_dsp_config_image_t*)config_ptr);
+
+    int16_t channel_count = strcmp(config.channels, "Grayscale") == 0 ? 1 : 3;
+
+    if (output_matrix->rows * output_matrix->cols != static_cast<uint32_t>(EI_CLASSIFIER_INPUT_WIDTH * EI_CLASSIFIER_INPUT_HEIGHT * channel_count)) {
+        ei_printf("out_matrix = %hu items\n", output_matrix->rows, output_matrix->cols);
+        ei_printf("calculated size = %hu items\n", static_cast<uint32_t>(EI_CLASSIFIER_INPUT_WIDTH * EI_CLASSIFIER_INPUT_HEIGHT * channel_count));
+        EIDSP_ERR(EIDSP_MATRIX_SIZE_MISMATCH);
+    }
+
+    size_t output_ix = 0;
+
+    // buffered read from the signal
+    size_t bytes_left = signal->total_length;
+    for (size_t ix = 0; ix < signal->total_length; ix += 1024) {
+        size_t elements_to_read = bytes_left > 1024 ? 1024 : bytes_left;
+
+        matrix_t input_matrix(elements_to_read, config.axes);
+        if (!input_matrix.buffer) {
+            EIDSP_ERR(EIDSP_OUT_OF_MEM);
+        }
+        signal->get_data(ix, elements_to_read, input_matrix.buffer);
+
+        for (size_t jx = 0; jx < elements_to_read; jx++) {
+            uint32_t pixel = static_cast<uint32_t>(input_matrix.buffer[jx]);
+
+            // rgb to 0..1
+            float r = static_cast<float>(pixel >> 16 & 0xff) / 255.0f;
+            float g = static_cast<float>(pixel >> 8 & 0xff) / 255.0f;
+            float b = static_cast<float>(pixel & 0xff) / 255.0f;
+
+            if (channel_count == 3) {
+                output_matrix->buffer[output_ix++] = static_cast<int8_t>(round(r / EI_CLASSIFIER_TFLITE_INPUT_SCALE) + EI_CLASSIFIER_TFLITE_INPUT_ZEROPOINT);
+                output_matrix->buffer[output_ix++] = static_cast<int8_t>(round(g / EI_CLASSIFIER_TFLITE_INPUT_SCALE) + EI_CLASSIFIER_TFLITE_INPUT_ZEROPOINT);
+                output_matrix->buffer[output_ix++] = static_cast<int8_t>(round(b / EI_CLASSIFIER_TFLITE_INPUT_SCALE) + EI_CLASSIFIER_TFLITE_INPUT_ZEROPOINT);
+            }
+            else {
+                // ITU-R 601-2 luma transform
+                // see: https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image.convert
+                float v = (0.299f * r) + (0.587f * g) + (0.114f * b);
+                output_matrix->buffer[output_ix++] = static_cast<int8_t>(round(v / EI_CLASSIFIER_TFLITE_INPUT_SCALE) + EI_CLASSIFIER_TFLITE_INPUT_ZEROPOINT);
+            }
+        }
+
+        bytes_left -= elements_to_read;
+    }
+
+    return EIDSP_OK;
+}
+#endif // EI_CLASSIFIER_TFLITE_INPUT_QUANTIZED == 1
 
 #ifdef __cplusplus
 }
