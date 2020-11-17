@@ -104,6 +104,14 @@ typedef struct {
     int axes;
     float frame_length;
     float frame_stride;
+    int fft_length;
+    bool show_axes;
+} ei_dsp_config_spectrogram_t;
+
+typedef struct {
+    int axes;
+    float frame_length;
+    float frame_stride;
     int num_filters;
     int fft_length;
     int low_frequency;
