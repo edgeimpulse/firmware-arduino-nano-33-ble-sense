@@ -247,7 +247,12 @@ static void at_list_files_data(char *name) {
 }
 
 static void at_list_files() {
-    ei_config_get_context()->list_files(at_list_files_data);
+    if(ei_config_get_context()->list_files == NULL){
+        ei_printf("AT+NACK\n");
+    }
+    else {
+        ei_config_get_context()->list_files(at_list_files_data);
+    }
 }
 
 static void at_read_file_data(uint8_t *buffer, size_t size) {
