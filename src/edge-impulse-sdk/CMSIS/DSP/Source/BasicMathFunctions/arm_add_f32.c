@@ -199,5 +199,5 @@ void arm_add_f32(
 /**
   @} end of BasicAdd group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

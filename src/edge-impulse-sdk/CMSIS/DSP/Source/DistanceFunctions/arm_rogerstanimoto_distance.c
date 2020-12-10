@@ -73,5 +73,5 @@ float32_t arm_rogerstanimoto_distance(const uint32_t *pA, const uint32_t *pB, ui
 /**
  * @} end of BoolDist group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

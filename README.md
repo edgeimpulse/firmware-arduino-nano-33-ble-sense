@@ -16,14 +16,7 @@ The arduino-cli tool is used to build and upload the Edge Impulse firmware to th
 
 * [Arduino CLI](https://arduino.github.io/arduino-cli/installation/).
 
-The Edge Impulse firmware depends on libraries and the Mbed core for Arduino. Running the following script will install all the dependencies for you:
-
-```
-$ arduino-cli core update-index
-$ arduino-cli core install arduino:mbed@1.1.4
-$ arduino-cli lib update-index
-$ arduino-cli lib install Arduino_LSM9DS1@1.0.0
-```
+The Edge Impulse firmware depends on some libraries and the Mbed core for Arduino. These will be automatically installed if you don't have them yet.
 
 ## Building the application
 
@@ -39,6 +32,6 @@ $ arduino-cli lib install Arduino_LSM9DS1@1.0.0
     ./arduino-build.sh --flash
     ```
 
-## Caveats
+## Troubleshooting
 
-* It's easy to brick the Nano 33 BLE board. You can double tap the button on the board to put it in bootloader mode and then flash a valid program through the Arduino IDE. Afterwards you can flash a new application again through the CLI.
+* Not flashing? You can double tap the button on the board to put it in bootloader mode.

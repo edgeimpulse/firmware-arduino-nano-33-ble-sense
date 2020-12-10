@@ -89,5 +89,5 @@ void arm_fir_init_f32(
 /**
   @} end of FIR group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

@@ -189,5 +189,5 @@ void arm_fill_f32(
 /**
   @} end of Fill group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

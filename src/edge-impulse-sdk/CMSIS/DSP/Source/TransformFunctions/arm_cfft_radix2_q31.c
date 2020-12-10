@@ -337,5 +337,5 @@ void arm_radix2_butterfly_inverse_q31(
    }                             // butterfly loop end
 
 }
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

@@ -134,5 +134,5 @@ void arm_bitreversal_16(
     i += 2;
   }
 }
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

@@ -903,5 +903,5 @@ void arm_correlate_q15(
 /**
   @} end of Corr group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

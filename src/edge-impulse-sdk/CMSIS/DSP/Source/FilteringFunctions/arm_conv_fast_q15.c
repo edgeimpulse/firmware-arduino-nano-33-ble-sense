@@ -663,5 +663,5 @@ void arm_conv_fast_q15(
 /**
   @} end of Conv group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

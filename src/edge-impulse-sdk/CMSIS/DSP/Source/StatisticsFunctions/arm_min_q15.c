@@ -234,5 +234,5 @@ void arm_min_q15(
 /**
   @} end of Min group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

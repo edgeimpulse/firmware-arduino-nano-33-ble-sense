@@ -232,5 +232,5 @@ void arm_shift_q31(
 /**
   @} end of BasicShift group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

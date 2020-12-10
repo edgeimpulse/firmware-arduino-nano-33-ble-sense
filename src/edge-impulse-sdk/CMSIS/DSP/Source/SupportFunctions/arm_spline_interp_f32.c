@@ -283,5 +283,5 @@ void arm_spline_f32(
 /**
   @} end of SplineInterpolate group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

@@ -1272,5 +1272,5 @@ float16_t onebyfftLen)
 }
 
 #endif /* #if defined(ARM_FLOAT16_SUPPORTED) */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

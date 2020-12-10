@@ -67,5 +67,5 @@ void arm_mat_init_q15(
 /**
   @} end of MatrixInit group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

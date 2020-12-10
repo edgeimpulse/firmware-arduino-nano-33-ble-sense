@@ -239,5 +239,5 @@ arm_status arm_rfft_init_q15(
 /**
   @} end of RealFFT group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

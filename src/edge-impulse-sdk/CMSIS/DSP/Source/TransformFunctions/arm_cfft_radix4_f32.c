@@ -1203,5 +1203,5 @@ void arm_radix4_butterfly_inverse_f32(
 }
 
 
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

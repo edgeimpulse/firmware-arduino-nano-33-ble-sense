@@ -97,5 +97,5 @@ void arm_vexp_f32(
       blkCnt--;
    }
 }
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

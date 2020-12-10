@@ -634,5 +634,5 @@ void arm_fir_decimate_q31(
 /**
   @} end of FIR_decimate group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

@@ -207,5 +207,5 @@ void arm_q15_to_float(
 /**
   @} end of q15_to_x group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

@@ -199,5 +199,5 @@ float32_t arm_braycurtis_distance_f32(const float32_t *pA,const float32_t *pB, u
 /**
  * @} end of groupDistance group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

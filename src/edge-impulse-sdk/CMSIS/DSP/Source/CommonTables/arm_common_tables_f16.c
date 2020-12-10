@@ -8430,5 +8430,5 @@ const float16_t twiddleCoefF16_4096[8192] = {
 
 
 
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

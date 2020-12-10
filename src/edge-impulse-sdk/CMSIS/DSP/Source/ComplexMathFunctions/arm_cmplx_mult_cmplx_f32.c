@@ -255,5 +255,5 @@ void arm_cmplx_mult_cmplx_f32(
 /**
   @} end of CmplxByCmplxMult group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

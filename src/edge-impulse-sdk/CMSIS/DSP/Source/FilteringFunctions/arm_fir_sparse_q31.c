@@ -357,5 +357,5 @@ void arm_fir_sparse_q31(
 /**
   @} end of FIR_Sparse group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

@@ -211,5 +211,5 @@ float32_t arm_chebyshev_distance_f32(const float32_t *pA,const float32_t *pB, ui
 /**
  * @} end of FloatDist group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

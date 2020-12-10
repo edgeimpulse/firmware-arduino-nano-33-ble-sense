@@ -171,5 +171,5 @@ void arm_sub_f16(
 /**
   @} end of BasicSub group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

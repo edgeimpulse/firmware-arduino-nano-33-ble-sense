@@ -123,7 +123,7 @@ public:
             osPriority_t priority = _cmd_thread->get_priority();
 
             // signal the other thread, and wait until it's done
-            _cmd_thread->signal_set(EI_SIGNAL_TERMINATE_THREAD_REQ);
+            _cmd_thread->flags_set(EI_SIGNAL_TERMINATE_THREAD_REQ);
 
             for (size_t ix = 0; ix < 10; ix++) {
                 ThisThread::sleep_for(200);

@@ -443,5 +443,5 @@ LOW_OPTIMIZATION_EXIT
 /**
   @} end of BiquadCascadeDF2T group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

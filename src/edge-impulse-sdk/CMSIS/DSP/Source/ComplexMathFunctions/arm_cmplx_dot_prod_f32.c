@@ -302,5 +302,5 @@ void arm_cmplx_dot_prod_f32(
 /**
   @} end of cmplx_dot_prod group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

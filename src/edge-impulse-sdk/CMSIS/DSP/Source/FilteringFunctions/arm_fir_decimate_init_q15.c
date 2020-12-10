@@ -106,5 +106,5 @@ arm_status arm_fir_decimate_init_q15(
 /**
   @} end of FIR_decimate group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

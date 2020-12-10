@@ -145,5 +145,5 @@ arm_status arm_cfft_radix4_init_q15(
 /**
   @} end of ComplexFFT group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

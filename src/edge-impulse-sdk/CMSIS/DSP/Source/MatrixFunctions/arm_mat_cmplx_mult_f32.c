@@ -1409,5 +1409,5 @@ arm_status arm_mat_cmplx_mult_f32(
 /**
   @} end of MatrixMult group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

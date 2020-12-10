@@ -773,5 +773,5 @@ void arm_fir_interpolate_q31(
 /**
   @} end of FIR_Interpolate group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

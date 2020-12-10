@@ -285,5 +285,5 @@ void arm_radix8_butterfly_f32(
       twidCoefModifier <<= 3;
    } while (n2 > 7);
 }
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

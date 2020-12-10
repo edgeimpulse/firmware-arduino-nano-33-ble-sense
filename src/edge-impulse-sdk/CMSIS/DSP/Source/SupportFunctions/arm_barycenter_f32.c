@@ -412,5 +412,5 @@ void arm_barycenter_f32(const float32_t *in, const float32_t *weights, float32_t
 /**
  * @} end of groupSupport group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

@@ -510,5 +510,5 @@ void arm_biquad_cascade_df1_q31(
 /**
   @} end of BiquadCascadeDF1 group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

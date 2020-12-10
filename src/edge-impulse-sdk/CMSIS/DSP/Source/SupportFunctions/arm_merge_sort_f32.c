@@ -127,5 +127,5 @@ void arm_merge_sort_f32(
 /**
   @} end of Sorting group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

@@ -221,5 +221,5 @@ void arm_cmplx_mag_q15(
 /**
   @} end of cmplx_mag group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

@@ -110,5 +110,5 @@ void arm_sin_cos_q31(
 /**
   @} end of SinCos group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

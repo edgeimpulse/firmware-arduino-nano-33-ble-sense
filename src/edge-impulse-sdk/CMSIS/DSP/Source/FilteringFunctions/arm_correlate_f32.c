@@ -1095,5 +1095,5 @@ void arm_correlate_f32(
 /**
   @} end of Corr group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

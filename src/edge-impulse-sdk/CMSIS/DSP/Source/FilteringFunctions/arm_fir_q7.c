@@ -751,5 +751,5 @@ void arm_fir_q7(
 /**
   @} end of FIR group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

@@ -386,5 +386,5 @@ arm_status arm_conv_partial_opt_q15(
 /**
   @} end of PartialConv group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

@@ -133,5 +133,5 @@ void arm_fill_q7(
 /**
   @} end of Fill group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

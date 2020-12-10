@@ -208,5 +208,5 @@ void arm_abs_q31(
 /**
   @} end of BasicAbs group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

@@ -5573,5 +5573,5 @@ float16_t rearranged_twiddle_stride3_4096_f16[2728]={
 #endif /* defined(ARM_MATH_MVEF) && !defined(ARM_MATH_AUTOVECTORIZE) */
 
 #endif /* if defined(ARM_FLOAT16_SUPPORTED) */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

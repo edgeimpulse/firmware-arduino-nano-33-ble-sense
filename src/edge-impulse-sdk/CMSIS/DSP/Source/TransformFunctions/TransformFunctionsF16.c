@@ -33,5 +33,5 @@
 #include "arm_cfft_radix2_f16.c"
 #include "arm_cfft_radix4_f16.c"
 
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

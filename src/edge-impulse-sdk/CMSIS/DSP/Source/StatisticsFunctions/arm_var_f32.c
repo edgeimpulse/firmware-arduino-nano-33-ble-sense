@@ -293,5 +293,5 @@ void arm_var_f32(
 /**
   @} end of variance group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

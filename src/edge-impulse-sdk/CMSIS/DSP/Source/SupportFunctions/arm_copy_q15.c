@@ -130,5 +130,5 @@ void arm_copy_q15(
 /**
   @} end of BasicCopy group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

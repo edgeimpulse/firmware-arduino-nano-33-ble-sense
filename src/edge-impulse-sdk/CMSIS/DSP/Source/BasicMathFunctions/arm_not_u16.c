@@ -130,5 +130,5 @@ void arm_not_u16(
 /**
   @} end of Not group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

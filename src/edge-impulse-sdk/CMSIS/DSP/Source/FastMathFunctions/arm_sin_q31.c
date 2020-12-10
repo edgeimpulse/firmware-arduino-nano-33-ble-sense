@@ -82,5 +82,5 @@ q31_t arm_sin_q31(
 /**
   @} end of sin group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

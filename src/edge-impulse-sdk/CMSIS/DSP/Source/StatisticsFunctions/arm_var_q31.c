@@ -214,5 +214,5 @@ void arm_var_q31(
 /**
   @} end of variance group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

@@ -654,5 +654,5 @@ const arm_rfft_instance_q15 arm_rfft_sR_q15_len8192 = {
 
 
 #endif
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

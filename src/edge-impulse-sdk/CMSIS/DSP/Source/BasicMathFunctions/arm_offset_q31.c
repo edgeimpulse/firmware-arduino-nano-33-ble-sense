@@ -175,5 +175,5 @@ void arm_offset_q31(
 /**
   @} end of BasicOffset group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

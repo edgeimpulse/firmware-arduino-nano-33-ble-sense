@@ -470,5 +470,5 @@ void arm_radix2_butterfly_inverse_f32(
 #endif /* #if defined (ARM_MATH_DSP) */
 
 }
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

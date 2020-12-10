@@ -141,5 +141,5 @@ void arm_rms_q31(
 /**
   @} end of RMS group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

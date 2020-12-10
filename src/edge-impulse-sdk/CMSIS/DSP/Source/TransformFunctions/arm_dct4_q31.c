@@ -383,5 +383,5 @@ void arm_dct4_q31(
 /**
   @} end of DCT4_IDCT4 group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

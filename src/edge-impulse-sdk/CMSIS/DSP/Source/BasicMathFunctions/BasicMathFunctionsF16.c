@@ -36,5 +36,5 @@
 #include "arm_offset_f16.c"
 #include "arm_scale_f16.c"
 #include "arm_sub_f16.c"
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

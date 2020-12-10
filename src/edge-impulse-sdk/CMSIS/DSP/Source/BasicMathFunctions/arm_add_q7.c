@@ -158,5 +158,5 @@ void arm_add_q7(
 /**
   @} end of BasicAdd group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

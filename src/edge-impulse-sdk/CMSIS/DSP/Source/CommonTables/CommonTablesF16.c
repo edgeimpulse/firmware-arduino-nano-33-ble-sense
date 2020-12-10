@@ -31,5 +31,5 @@
 #include "arm_common_tables_f16.c"
 #include "arm_const_structs_f16.c"
 #include "arm_mve_tables_f16.c"
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

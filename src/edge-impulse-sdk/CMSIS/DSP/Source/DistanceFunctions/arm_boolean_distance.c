@@ -78,5 +78,5 @@
 #define EXT _TT
 #include "edge-impulse-sdk/CMSIS/DSP/Source/DistanceFunctions/arm_boolean_distance_template.h"
 
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

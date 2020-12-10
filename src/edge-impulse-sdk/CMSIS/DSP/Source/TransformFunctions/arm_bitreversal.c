@@ -302,5 +302,5 @@ void arm_bitreversal_q15(
       pBitRevTab += bitRevFactor;
    }
 }
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

@@ -964,5 +964,5 @@ void arm_conv_f32(
 /**
   @} end of Conv group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

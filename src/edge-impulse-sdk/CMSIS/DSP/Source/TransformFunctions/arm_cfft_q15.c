@@ -949,5 +949,5 @@ void arm_cfft_radix4by2_inverse_q15(
 }
 
 #endif /* defined(ARM_MATH_MVEI) */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

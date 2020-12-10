@@ -618,5 +618,5 @@ arm_status arm_conv_partial_fast_q31(
 /**
   @} end of PartialConv group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

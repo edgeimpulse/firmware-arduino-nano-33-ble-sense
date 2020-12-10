@@ -1589,5 +1589,5 @@ arm_status arm_mat_inverse_f32(
 /**
   @} end of MatrixInv group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

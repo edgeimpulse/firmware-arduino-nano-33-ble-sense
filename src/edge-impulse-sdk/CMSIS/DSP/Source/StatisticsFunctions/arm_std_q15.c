@@ -173,5 +173,5 @@ void arm_std_q15(
 /**
   @} end of STD group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

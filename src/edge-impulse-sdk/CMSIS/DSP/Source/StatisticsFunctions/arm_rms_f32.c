@@ -192,5 +192,5 @@ void arm_rms_f32(
 /**
   @} end of RMS group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

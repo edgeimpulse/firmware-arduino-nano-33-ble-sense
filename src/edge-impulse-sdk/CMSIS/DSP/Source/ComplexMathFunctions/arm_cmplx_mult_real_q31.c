@@ -204,5 +204,5 @@ void arm_cmplx_mult_real_q31(
 /**
   @} end of CmplxByRealMult group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

@@ -242,5 +242,5 @@ arm_status arm_mat_scale_q31(
 /**
   @} end of MatrixScale group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

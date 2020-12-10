@@ -191,5 +191,5 @@ float32_t arm_kullback_leibler_f32(const float32_t * pSrcA,const float32_t * pSr
 /**
  * @} end of groupStats group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

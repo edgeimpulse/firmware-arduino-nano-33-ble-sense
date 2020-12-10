@@ -73,5 +73,5 @@ float64_t arm_kullback_leibler_f64(const float64_t * pSrcA, const float64_t * pS
 /**
  * @} end of groupStats group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

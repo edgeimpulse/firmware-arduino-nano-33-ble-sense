@@ -453,5 +453,5 @@ void arm_fir_lattice_f32(
 /**
   @} end of FIR_Lattice group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

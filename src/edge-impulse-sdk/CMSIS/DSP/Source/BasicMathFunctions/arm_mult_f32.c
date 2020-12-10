@@ -200,5 +200,5 @@ void arm_mult_f32(
 /**
   @} end of BasicMult group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

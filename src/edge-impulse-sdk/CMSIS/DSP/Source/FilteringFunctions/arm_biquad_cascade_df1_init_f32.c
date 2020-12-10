@@ -146,5 +146,5 @@ void arm_biquad_cascade_df1_mve_init_f32(
 /**
   @} end of BiquadCascadeDF1 group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

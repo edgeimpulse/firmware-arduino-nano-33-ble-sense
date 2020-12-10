@@ -348,5 +348,5 @@ arm_status arm_mat_trans_q15(
 /**
   @} end of MatrixTrans group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

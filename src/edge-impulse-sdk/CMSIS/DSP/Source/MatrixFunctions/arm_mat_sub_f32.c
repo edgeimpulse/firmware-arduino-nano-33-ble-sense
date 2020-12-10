@@ -298,5 +298,5 @@ arm_status arm_mat_sub_f32(
 /**
   @} end of MatrixSub group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

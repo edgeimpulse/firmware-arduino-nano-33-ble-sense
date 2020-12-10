@@ -283,5 +283,5 @@ void arm_lms_q31(
 /**
   @} end of LMS group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

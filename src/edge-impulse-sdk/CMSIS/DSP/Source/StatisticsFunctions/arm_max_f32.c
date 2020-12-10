@@ -365,5 +365,5 @@ void arm_max_f32(
 /**
   @} end of Max group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

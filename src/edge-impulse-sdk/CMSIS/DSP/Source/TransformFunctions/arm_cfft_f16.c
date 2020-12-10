@@ -902,5 +902,5 @@ void arm_cfft_f16(
 /**
   @} end of ComplexFFT group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

@@ -68,5 +68,5 @@ float32_t arm_cosine_distance_f32(const float32_t *pA,const float32_t *pB, uint3
 /**
  * @} end of FloatDist group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

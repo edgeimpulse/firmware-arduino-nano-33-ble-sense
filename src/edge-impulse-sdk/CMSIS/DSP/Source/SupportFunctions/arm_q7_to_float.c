@@ -218,5 +218,5 @@ void arm_q7_to_float(
 /**
   @} end of q7_to_x group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

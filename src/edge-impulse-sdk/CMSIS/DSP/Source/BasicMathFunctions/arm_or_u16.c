@@ -137,5 +137,5 @@ void arm_or_u16(
 /**
   @} end of Or group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

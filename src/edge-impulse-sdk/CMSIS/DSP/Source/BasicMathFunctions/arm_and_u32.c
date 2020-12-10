@@ -129,5 +129,5 @@ void arm_and_u32(
 /**
   @} end of And group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

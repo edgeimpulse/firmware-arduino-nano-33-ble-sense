@@ -453,5 +453,5 @@ void arm_svm_linear_predict_f32(
 /**
  * @} end of groupSVM group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

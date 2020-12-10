@@ -121,5 +121,5 @@ float32_t arm_cos_f32(
 /**
   @} end of cos group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

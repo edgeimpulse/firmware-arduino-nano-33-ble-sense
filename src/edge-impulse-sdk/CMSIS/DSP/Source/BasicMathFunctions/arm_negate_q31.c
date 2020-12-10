@@ -178,5 +178,5 @@ void arm_negate_q31(
 /**
   @} end of BasicNegate group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

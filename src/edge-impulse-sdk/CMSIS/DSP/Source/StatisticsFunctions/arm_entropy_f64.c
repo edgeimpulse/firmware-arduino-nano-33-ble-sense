@@ -71,5 +71,5 @@ float64_t arm_entropy_f64(const float64_t * pSrcA, uint32_t blockSize)
 /**
  * @} end of groupStats group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

@@ -211,5 +211,5 @@ void arm_biquad_cascade_df2T_init_f32(
 /**
   @} end of BiquadCascadeDF2T group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

@@ -352,5 +352,5 @@ arm_status arm_rfft_fast_init_f32(
 /**
   @} end of RealFFT group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

@@ -186,5 +186,5 @@ void arm_scale_q7(
 /**
   @} end of BasicScale group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

@@ -181,5 +181,5 @@ void arm_q31_to_q15(
 /**
   @} end of q31_to_x group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

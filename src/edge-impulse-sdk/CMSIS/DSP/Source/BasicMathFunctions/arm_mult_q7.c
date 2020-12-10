@@ -168,5 +168,5 @@ void arm_mult_q7(
 /**
   @} end of BasicMult group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

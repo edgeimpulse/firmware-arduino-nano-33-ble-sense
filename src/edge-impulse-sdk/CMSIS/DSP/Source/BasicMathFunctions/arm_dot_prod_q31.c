@@ -174,5 +174,5 @@ void arm_dot_prod_q31(
 /**
   @} end of BasicDotProd group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

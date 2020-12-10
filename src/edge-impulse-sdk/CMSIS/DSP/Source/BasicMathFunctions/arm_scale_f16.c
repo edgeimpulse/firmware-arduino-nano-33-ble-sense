@@ -183,5 +183,5 @@ void arm_scale_f16(
 /**
   @} end of BasicScale group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

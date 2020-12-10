@@ -92,5 +92,5 @@ void arm_pid_init_q31(
 /**
   @} end of PID group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

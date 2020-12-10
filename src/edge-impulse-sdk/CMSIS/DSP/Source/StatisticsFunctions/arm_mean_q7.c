@@ -153,5 +153,5 @@ void arm_mean_q7(
 /**
   @} end of mean group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

@@ -227,5 +227,5 @@ arm_status arm_mat_add_q15(
 /**
   @} end of MatrixAdd group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

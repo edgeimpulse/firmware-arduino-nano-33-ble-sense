@@ -533,5 +533,5 @@ void arm_lms_f32(
 /**
   @} end of LMS group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

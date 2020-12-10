@@ -84,5 +84,5 @@ q15_t arm_cos_q15(
 /**
   @} end of cos group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

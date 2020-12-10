@@ -1039,5 +1039,5 @@ const arm_sort_instance_f32 * S,
 /**
   @} end of Sorting group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

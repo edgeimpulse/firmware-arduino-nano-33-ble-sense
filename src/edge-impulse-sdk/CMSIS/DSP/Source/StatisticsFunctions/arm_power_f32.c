@@ -229,5 +229,5 @@ void arm_power_f32(
 /**
   @} end of power group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

@@ -397,5 +397,5 @@ uint32_t arm_gaussian_naive_bayes_predict_f32(const arm_gaussian_naive_bayes_ins
 /**
  * @} end of groupBayes group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

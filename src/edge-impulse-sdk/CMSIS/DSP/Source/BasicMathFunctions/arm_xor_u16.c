@@ -137,5 +137,5 @@ void arm_xor_u16(
 /**
   @} end of Xor group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

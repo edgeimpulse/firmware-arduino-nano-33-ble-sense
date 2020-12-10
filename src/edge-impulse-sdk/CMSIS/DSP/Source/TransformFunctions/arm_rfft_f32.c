@@ -311,5 +311,5 @@ void arm_split_rifft_f32(
   }
 
 }
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

@@ -396,5 +396,5 @@ void arm_iir_lattice_q15(
 /**
   @} end of IIR_Lattice group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

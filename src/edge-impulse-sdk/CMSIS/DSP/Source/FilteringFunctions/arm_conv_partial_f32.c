@@ -672,5 +672,5 @@ arm_status arm_conv_partial_f32(
 /**
   @} end of PartialConv group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

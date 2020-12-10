@@ -500,5 +500,5 @@ void arm_split_rifft_q31(
 }
 
 #endif /* defined(ARM_MATH_MVEI) */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

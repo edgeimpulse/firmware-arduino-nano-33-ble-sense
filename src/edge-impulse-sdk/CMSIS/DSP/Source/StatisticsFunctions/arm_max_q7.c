@@ -288,5 +288,5 @@ void arm_max_q7(
 /**
   @} end of Max group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

@@ -1809,5 +1809,5 @@ void arm_radix4_butterfly_inverse_q15(
 #endif /* #if defined (ARM_MATH_DSP) */
 
 }
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

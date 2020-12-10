@@ -213,5 +213,5 @@ void arm_cmplx_conj_f32(
 /**
   @} end of cmplx_conj group
  */
--e 
+
 #endif // EIDSP_LOAD_CMSIS_DSP_SOURCES
