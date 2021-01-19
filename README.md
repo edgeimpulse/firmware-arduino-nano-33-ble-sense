@@ -2,7 +2,7 @@
 
 Edge Impulse enables developers to create the next generation of intelligent device solutions with embedded Machine Learning. This repository contains the Edge Impulse firmware for the Arduino Nano 33 BLE Sense development board. This device supports all Edge Impulse device features, including ingestion, remote management and inferencing.
 
-> **Note:** Do you just want to use this development board with Edge Impulse? No need to build this firmware. See the instructions [here](https://docs.edgeimpulse.com/docs/arduino-nano-33-ble-sense) for a prebuilt image and instructions.
+> **Note:** Do you just want to use this development board with Edge Impulse? No need to build this firmware. See the instructions [here](https://docs.edgeimpulse.com/docs/arduino-nano-33-ble-sense) for a prebuilt image and instructions. Or, you can use the [data forwarder](https://docs.edgeimpulse.com/docs/cli-data-forwarder) to capture data from any sensor.
 
 ## Requirements
 
