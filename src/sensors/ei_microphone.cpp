@@ -299,7 +299,7 @@ bool ei_microphone_inference_start(uint32_t n_samples)
 
     inference.buffers[1] = (int16_t *)malloc(n_samples * sizeof(int16_t));
 
-    if(inference.buffers[0] == NULL) {
+    if(inference.buffers[1] == NULL) {
         free(inference.buffers[0]);
         return false;
     }
