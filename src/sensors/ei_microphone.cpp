@@ -299,12 +299,12 @@ bool ei_microphone_inference_start(uint32_t n_samples)
 
     inference.buffers[1] = (int16_t *)malloc(n_samples * sizeof(int16_t));
 
-    if(inference.buffers[0] == NULL) {
+    if(inference.buffers[1] == NULL) {
         free(inference.buffers[0]);
         return false;
     }
 
-    sampleBuffer = (int16_t *)malloc((n_samples >> 1) * sizeof(int16_t));
+    sampleBuffer = (int16_t *)malloc((n_samples / 100) * sizeof(int16_t));
 
     if(sampleBuffer == NULL) {
         free(inference.buffers[0]);
@@ -325,7 +325,7 @@ bool ei_microphone_inference_start(uint32_t n_samples)
     // optionally set the gain, defaults to 20
     PDM.setGain(80);
 
-    PDM.setBufferSize((n_samples >> 1) * sizeof(int16_t));
+    PDM.setBufferSize((n_samples / 100) * sizeof(int16_t));
 
     // initialize PDM with:
     // - one channel (mono mode)
