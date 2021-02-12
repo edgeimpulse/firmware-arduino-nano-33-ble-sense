@@ -22,6 +22,8 @@
 #ifndef _EI_CLASSIFIER_MODEL_METADATA_H_
 #define _EI_CLASSIFIER_MODEL_METADATA_H_
 
+#include <stdint.h>
+
 #define EI_CLASSIFIER_NONE                       255
 #define EI_CLASSIFIER_UTENSOR                    1
 #define EI_CLASSIFIER_TFLITE                     2
@@ -70,6 +72,7 @@
 const char* ei_classifier_inferencing_categories[] = { "idle", "snake", "updown", "wave" };
 
 typedef struct {
+    uint16_t implementation_version;
     int axes;
     float scale_axes;
     bool average;
@@ -82,11 +85,13 @@ typedef struct {
 } ei_dsp_config_flatten_t;
 
 typedef struct {
+    uint16_t implementation_version;
     int axes;
     const char * channels;
 } ei_dsp_config_image_t;
 
 typedef struct {
+    uint16_t implementation_version;
     int axes;
     int num_cepstral;
     float frame_length;
@@ -101,14 +106,7 @@ typedef struct {
 } ei_dsp_config_mfcc_t;
 
 typedef struct {
-    int axes;
-    float frame_length;
-    float frame_stride;
-    int fft_length;
-    bool show_axes;
-} ei_dsp_config_spectrogram_t;
-
-typedef struct {
+    uint16_t implementation_version;
     int axes;
     float frame_length;
     float frame_stride;
@@ -120,11 +118,13 @@ typedef struct {
 } ei_dsp_config_mfe_t;
 
 typedef struct {
+    uint16_t implementation_version;
     int axes;
     float scale_axes;
 } ei_dsp_config_raw_t;
 
 typedef struct {
+    uint16_t implementation_version;
     int axes;
     float scale_axes;
     const char * filter_type;
@@ -136,7 +136,29 @@ typedef struct {
     const char * spectral_power_edges;
 } ei_dsp_config_spectral_analysis_t;
 
+typedef struct {
+    uint16_t implementation_version;
+    int axes;
+    float frame_length;
+    float frame_stride;
+    int fft_length;
+    bool show_axes;
+} ei_dsp_config_spectrogram_t;
+
+typedef struct {
+    uint16_t implementation_version;
+    int axes;
+    float frame_length;
+    float frame_stride;
+    int num_filters;
+    int fft_length;
+    int low_frequency;
+    int high_frequency;
+    float pre_cof;
+} ei_dsp_config_audio_syntiant_t;
+
 ei_dsp_config_spectral_analysis_t ei_dsp_config_330 = {
+    1,
     3,
     1.00000f,
     "low",
