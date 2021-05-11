@@ -27,7 +27,10 @@
 #include "ei_inertialsensor.h"
 
 #include <stdio.h>
+#include <stdarg.h>
 #include "Arduino.h"
+#include "mbed.h"
+
 /* Constants --------------------------------------------------------------- */
 
 /** Memory location for the arduino device address */
@@ -252,7 +255,7 @@ void ei_write_string(char *data, int length) {
  * @return     pointer to Serial
  */
 mbed::Stream* ei_get_serial() {
-    return &Serial;
+    return (mbed::Stream *)&Serial;
 }
 
 /**
