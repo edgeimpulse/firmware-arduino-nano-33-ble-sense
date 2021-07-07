@@ -136,6 +136,7 @@ typedef struct {
     int low_frequency;
     int high_frequency;
     int win_size;
+    int noise_floor_db;
 } ei_dsp_config_mfe_t;
 
 typedef struct {
@@ -163,6 +164,7 @@ typedef struct {
     float frame_length;
     float frame_stride;
     int fft_length;
+    int noise_floor_db;
     bool show_axes;
 } ei_dsp_config_spectrogram_t;
 
