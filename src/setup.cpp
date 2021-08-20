@@ -4,6 +4,7 @@
 #include "at_cmd_repl_mbed.h"
 #include "ei_microphone.h"
 #include "ei_inertialsensor.h"
+#include "ei_camera.h"
 #include "ei_sampler.h"
 #include "ei_run_impulse.h"
 
@@ -78,8 +79,9 @@ void ei_main() {
     // }
 
     ei_inertial_init();
-
+    ei_camera_init();
     ei_nano_fs_init();
+    
 
     // intialize configuration
     ei_config_ctx_t config_ctx = { 0 };
@@ -92,6 +94,8 @@ void ei_main() {
     config_ctx.save_config = &ei_nano_fs_save_config;
     config_ctx.list_files = NULL;
     config_ctx.read_buffer = &ei_nano_fs_read_buffer;
+    config_ctx.take_snapshot = &ei_camera_take_snapshot_encode_and_output;
+    config_ctx.start_snapshot_stream = &ei_camera_start_snapshot_stream_encode_and_output;
 
     EI_CONFIG_ERROR cr = ei_config_init(&config_ctx);
 

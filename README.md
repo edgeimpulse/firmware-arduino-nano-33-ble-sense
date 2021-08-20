@@ -9,6 +9,7 @@ Edge Impulse enables developers to create the next generation of intelligent dev
 ### Hardware
 
 * [Arduino Nano 33 BLE Sense](https://store.arduino.cc/usa/nano-33-ble-sense) or [Arduino Nano 33 BLE](https://store.arduino.cc/usa/nano-33-ble) development board.
+* (Optional) [Arduino Tiny Machine Learning Kit](https://store.arduino.cc/tiny-machine-learning-kit) - to add sight to your Arduino Nano 33 BLE.
 
 ### Tools
 

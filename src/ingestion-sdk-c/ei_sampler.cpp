@@ -146,8 +146,10 @@ bool ei_sampler_start_sampling(void *v_ptr_payload, uint32_t sample_size)
         ((sample_buffer_size / ei_nano_fs_get_block_size())+1) * NANO_FS_BLOCK_ERASE_TIME_MS);
     }
 
-	if(ei_nano_fs_erase_sampledata(0, sample_buffer_size) != NANO_FS_CMD_OK)
+	if(ei_nano_fs_erase_sampledata(0, sample_buffer_size) != NANO_FS_CMD_OK) {
+        ei_printf("ERR: Failed to erase sample memory\r\n");
 		return false;
+    }
 
     if(create_header(payload) == false)
         return false;

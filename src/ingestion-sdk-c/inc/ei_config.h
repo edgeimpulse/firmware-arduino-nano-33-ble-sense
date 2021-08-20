@@ -129,6 +129,11 @@ typedef struct {
     // Get the last error from the remote management interface (if applicable)
     bool (*mgmt_get_last_error)(char *error, size_t error_size);
 
+    // Take a snapshot
+    bool (*take_snapshot)(size_t width, size_t height, bool use_max_baudrate);
+
+    // Start a snapshot stream
+    bool (*start_snapshot_stream)(size_t width, size_t height, bool use_max_baudrate);
 } ei_config_ctx_t;
 
 // Only single context has to be active, so store this here

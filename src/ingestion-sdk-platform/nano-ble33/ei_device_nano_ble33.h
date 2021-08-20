@@ -27,7 +27,9 @@
 #include "ei_device_info.h"
 
 /** Number of sensors used */
-#define EI_DEVICE_N_SENSORS		2
+#define EI_DEVICE_N_SENSORS					2
+#define EI_DEVICE_N_RESOLUTIONS				2
+#define EI_DEVICE_N_RESIZE_RESOLUTIONS		2
 
 /** C Callback types */
 typedef int (*c_callback)(uint8_t out_buffer[32], size_t *out_size);
@@ -41,6 +43,8 @@ class EiDeviceNanoBle33 : public EiDeviceInfo
 {
 private:
 	ei_device_sensor_t sensors[EI_DEVICE_N_SENSORS];
+	ei_device_snapshot_resolutions_t snapshot_resolutions[EI_DEVICE_N_RESOLUTIONS];
+	ei_device_resize_resolutions_t resize_resolutions[EI_DEVICE_N_RESIZE_RESOLUTIONS];
 public:	
 	EiDeviceNanoBle33(void);
 	
@@ -51,6 +55,9 @@ public:
 	bool get_wifi_connection_status(void);
 	bool get_wifi_present_status();
 	bool get_sensor_list(const ei_device_sensor_t **sensor_list, size_t *sensor_list_size);
+	bool get_snapshot_list(const ei_device_snapshot_resolutions_t **resolution_list, size_t *resolution_list_size,
+						   const char **color_depth);
+	bool get_resize_list(const ei_device_resize_resolutions_t **resize_list,size_t *resize_list_size);
 
 	c_callback get_id_function(void);
 	c_callback get_type_function(void);

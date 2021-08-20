@@ -53,6 +53,17 @@ if [ -z "$HAS_LSM9DS1_LIB" ]; then
     echo "Installing LSM9DS1 library OK"
 fi
 
+has_ov767x_lib() {
+	$ARDUINO_CLI lib list | grep Arduino_OV767X || true
+}
+HAS_OV767X_LIB="$(has_ov767x_lib)"
+if [ -z "$HAS_OV767X_LIB" ]; then
+    echo "Installing OV767X library..."
+    $ARDUINO_CLI lib update-index
+	$ARDUINO_CLI lib install Arduino_OV767X@0.0.2	#Camera sensor library
+    echo "Installing OV767X library OK"
+fi
+
 # CLI v0.14 updates the name of this to --build-property
 if ((CLI_MAJOR >= 0 && CLI_MINOR >= 14)); then
 	BUILD_PROPERTIES_FLAG=--build-property

@@ -23,8 +23,10 @@
 /* Include ----------------------------------------------------------------- */
 #include "edge-impulse-sdk/classifier/ei_run_classifier.h"
 #include "edge-impulse-sdk/dsp/numpy.hpp"
+#include "ei_device_nano_ble33.h"
 #include "ei_inertialsensor.h"
 #include "ei_microphone.h"
+#include "ei_camera.h"
 #include "setup.h"
 
 #if defined(EI_CLASSIFIER_SENSOR) && EI_CLASSIFIER_SENSOR == EI_CLASSIFIER_SENSOR_ACCELEROMETER
@@ -270,6 +272,203 @@ void run_nn_continuous(bool debug)
     }
 
     ei_microphone_inference_end();
+}
+
+#elif defined(EI_CLASSIFIER_SENSOR) && EI_CLASSIFIER_SENSOR == EI_CLASSIFIER_SENSOR_CAMERA
+
+#define DWORD_ALIGN_PTR(a)   ((a & 0x3) ?(((uintptr_t)a + 0x4) & ~(uintptr_t)0x3) : a)
+
+void run_nn(bool debug) {
+    bool stop_inferencing = false;
+
+    // summary of inferencing settings (from model_metadata.h)
+    ei_printf("Inferencing settings:\n");
+    ei_printf("\tImage resolution: %dx%d\n", EI_CLASSIFIER_INPUT_WIDTH, EI_CLASSIFIER_INPUT_HEIGHT);
+    ei_printf("\tFrame size: %d\n", EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE);
+    ei_printf("\tNo. of classes: %d\n", sizeof(ei_classifier_inferencing_categories) / sizeof(ei_classifier_inferencing_categories[0]));
+
+    while(stop_inferencing == false) {
+        ei_printf("Starting inferencing in 2 seconds...\n");
+
+        // instead of wait_ms, we'll wait on the signal, this allows threads to cancel us...
+        if (ei_sleep(2000) != EI_IMPULSE_OK) {
+            break;
+        }
+
+        ei_printf("Taking photo...\n");
+
+        if (ei_camera_init() == false) {
+            ei_printf("ERR: Failed to initialize image sensor\r\n");
+            break;
+        }
+
+        // choose resize dimensions
+        uint32_t resize_col_sz;
+        uint32_t resize_row_sz;
+        bool do_resize = false;
+        int res = calculate_resize_dimensions(EI_CLASSIFIER_INPUT_WIDTH, EI_CLASSIFIER_INPUT_HEIGHT, &resize_col_sz, &resize_row_sz, &do_resize);
+        if (res) {
+            ei_printf("ERR: Failed to calculate resize dimensions (%d)\r\n", res);
+            break;
+        }
+
+        void *snapshot_mem = NULL;
+        uint8_t *snapshot_buf = NULL;
+        snapshot_mem = ei_malloc(resize_col_sz*resize_row_sz*2);
+        if(snapshot_mem == NULL) {
+            ei_printf("failed to create snapshot_mem\r\n");
+            break;
+        }
+        snapshot_buf = (uint8_t *)DWORD_ALIGN_PTR((uintptr_t)snapshot_mem);
+
+        if (ei_camera_capture(EI_CLASSIFIER_INPUT_WIDTH, EI_CLASSIFIER_INPUT_HEIGHT, snapshot_buf) == false) {
+            ei_printf("Failed to capture image\r\n");
+            if (snapshot_mem) ei_free(snapshot_mem);
+            break;
+        }
+
+        ei::signal_t signal;
+        signal.total_length = EI_CLASSIFIER_INPUT_WIDTH * EI_CLASSIFIER_INPUT_HEIGHT;
+        signal.get_data = &ei_camera_cutout_get_data;
+
+        if (debug) {
+            ei_printf("Framebuffer: ");
+
+            size_t signal_chunk_size = 1024;
+
+            // loop through the signal
+            float *signal_buf = (float*)ei_malloc(signal_chunk_size * sizeof(float));
+            if (!signal_buf) {
+                ei_printf("ERR: Failed to allocate signal buffer\n");
+                return;
+            }
+
+            uint8_t *per_pixel_buffer = (uint8_t*)ei_malloc(513); // 171 x 3 pixels
+            if (!per_pixel_buffer) {
+                ei_free(signal_buf);
+                ei_printf("ERR: Failed to allocate per_pixel buffer\n");
+                return;
+            }
+
+            size_t per_pixel_buffer_ix = 0;
+
+            for (size_t ix = 0; ix < signal.total_length; ix += signal_chunk_size) {
+                size_t items_to_read = signal_chunk_size;
+                if (items_to_read > signal.total_length - ix) {
+                    items_to_read = signal.total_length - ix;
+                }
+
+                int r = signal.get_data(ix, items_to_read, signal_buf);
+                if (r != 0) {
+                    ei_printf("ERR: Failed to get data from signal (%d)\n", r);
+                    break;
+                }
+
+                for (size_t px = 0; px < items_to_read; px++) {
+                    uint32_t pixel = static_cast<uint32_t>(signal_buf[px]);
+
+                    // grab rgb
+                    uint8_t r = static_cast<float>(pixel >> 16 & 0xff);
+                    uint8_t g = static_cast<float>(pixel >> 8 & 0xff);
+                    uint8_t b = static_cast<float>(pixel & 0xff);
+
+                    // is monochrome anyway now, so just print 1 pixel at a time
+                    const bool print_rgb = false;
+
+                    if (print_rgb) {
+                        per_pixel_buffer[per_pixel_buffer_ix + 0] = r;
+                        per_pixel_buffer[per_pixel_buffer_ix + 1] = g;
+                        per_pixel_buffer[per_pixel_buffer_ix + 2] = b;
+                        per_pixel_buffer_ix += 3;
+                    }
+                    else {
+                        per_pixel_buffer[per_pixel_buffer_ix + 0] = r;
+                        per_pixel_buffer_ix++;
+                    }
+
+                    if (per_pixel_buffer_ix >= 513) {
+                        const size_t base64_output_size = 684;
+
+                        char *base64_buffer = (char*)ei_malloc(base64_output_size);
+                        if (!base64_buffer) {
+                            ei_printf("ERR: Cannot allocate base64 buffer of size %lu, out of memory\n", base64_output_size);
+                            ei_free(signal_buf);
+                            ei_free(per_pixel_buffer);
+                            ei_free(snapshot_mem);
+                            return;
+                        }
+
+                        int r = base64_encode((const char*)per_pixel_buffer, per_pixel_buffer_ix, base64_buffer, base64_output_size);
+                        if (r < 0) {
+                            ei_printf("ERR: Failed to base64 encode (%d)\n", r);
+                            ei_free(signal_buf);
+                            ei_free(per_pixel_buffer);
+                            ei_free(snapshot_mem);
+                            return;
+                        }
+
+                        ei_write_string(base64_buffer, r);
+                        per_pixel_buffer_ix = 0;
+                        ei_free(base64_buffer);
+                    }
+                }
+            }
+
+            const size_t new_base64_buffer_output_size = floor(per_pixel_buffer_ix / 3 * 4) + 4;
+            char *base64_buffer = (char*)ei_malloc(new_base64_buffer_output_size);
+            if (!base64_buffer) {
+                ei_free(signal_buf);
+                ei_free(per_pixel_buffer);
+                ei_free(snapshot_mem);
+                ei_printf("ERR: Cannot allocate base64 buffer of size %lu, out of memory\n", new_base64_buffer_output_size);
+                return;
+            }
+
+            int r = base64_encode((const char*)per_pixel_buffer, per_pixel_buffer_ix, base64_buffer, new_base64_buffer_output_size);
+            if (r < 0) {
+                ei_free(signal_buf);
+                ei_free(per_pixel_buffer);
+                ei_free(snapshot_mem);
+                ei_printf("ERR: Failed to base64 encode (%d)\n", r);
+                return;
+            }
+
+            ei_write_string(base64_buffer, r);
+            ei_printf("\r\n");
+
+            ei_free(signal_buf);
+            ei_free(per_pixel_buffer);
+            ei_free(base64_buffer);
+        }
+
+        // run the impulse: DSP, neural network and the Anomaly algorithm
+        ei_impulse_result_t result = { 0 };
+
+        EI_IMPULSE_ERROR ei_error = run_classifier(&signal, &result, debug);
+        if (ei_error != EI_IMPULSE_OK) {
+            ei_printf("Failed to run impulse (%d)\n", ei_error);
+            break;
+        }
+
+        // print the predictions
+        ei_printf("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
+                  result.timing.dsp, result.timing.classification, result.timing.anomaly);
+        for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
+            ei_printf("    %s: \t%f\r\n", result.classification[ix].label, result.classification[ix].value);
+        }
+#if EI_CLASSIFIER_HAS_ANOMALY == 1
+        ei_printf("    anomaly score: %f\r\n", result.anomaly);
+#endif
+
+        while (ei_get_serial_available() > 0) {
+            if (ei_get_serial_byte() == 'b') {
+                ei_printf("Inferencing stopped by user\r\n");
+                stop_inferencing = true;
+            }
+        }
+        if (snapshot_mem) ei_free(snapshot_mem);
+    }
+    ei_camera_deinit();
 }
 
 #else

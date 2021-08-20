@@ -322,9 +322,6 @@ bool ei_microphone_inference_start(uint32_t n_samples)
     // configure the data receive callback
     PDM.onReceive(&pdm_data_ready_inference_callback);
 
-    // optionally set the gain, defaults to 20
-    PDM.setGain(80);
-
     PDM.setBufferSize((n_samples / 100) * sizeof(int16_t));
 
     // initialize PDM with:
@@ -333,6 +330,9 @@ bool ei_microphone_inference_start(uint32_t n_samples)
     if (!PDM.begin(1, AUDIO_SAMPLING_FREQUENCY)) {
         ei_printf("Failed to start PDM!");
     }
+
+    // set the gain, defaults to 20
+    PDM.setGain(127);
 
     record_ready = true;
 
@@ -434,9 +434,6 @@ bool ei_microphone_sample_start(void)
     // configure the data receive callback
     PDM.onReceive(&pdm_data_ready_callback);
 
-    // optionally set the gain, defaults to 20
-    PDM.setGain(80);
-
     // ei_printf("Sector size: %d\r\n", ei_nano_fs_get_block_size());
     PDM.setBufferSize(ei_nano_fs_get_block_size());
 
@@ -446,6 +443,9 @@ bool ei_microphone_sample_start(void)
     if (!PDM.begin(1, AUDIO_SAMPLING_FREQUENCY)) {
         ei_printf("Failed to start PDM!");
     }
+
+    // set the gain, defaults to 20
+    PDM.setGain(127);
 
     bool r = ei_microphone_record(ei_config_get_config()->sample_length_ms, (((samples_required <<1)/ ei_nano_fs_get_block_size()) * NANO_FS_BLOCK_ERASE_TIME_MS), true);
     if (!r) {

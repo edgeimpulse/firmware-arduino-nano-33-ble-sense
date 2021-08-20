@@ -25,7 +25,6 @@
 
 #include "mbed.h"
 #include "FlashIAP.h"
-//#include "setup.h"
 
 /* Private types & constants ---------------------------------------------- */
 
@@ -72,8 +71,8 @@ bool ei_nano_fs_init(void)
     nano_fs.config_file_address = (iap.get_flash_start() + iap.get_flash_size()) - (nano_fs.sector_size);
     nano_fs.sample_start_address = SECTOR_ALIGN(FLASHIAP_APP_ROM_END_ADDR, nano_fs.sector_size);
 
-    //ei_printf("Start config: %d start sample: %d size sample: %d\r\n", nano_fs.config_file_address,
-    //	nano_fs.sample_start_address, nano_fs.config_file_address - nano_fs.sample_start_address);
+    // ei_printf("Start config: %d start sample: %d size sample: %d\r\n", nano_fs.config_file_address,
+    // 	nano_fs.sample_start_address, nano_fs.config_file_address - nano_fs.sample_start_address);
 
 	/* Check correct init of all parameters */
 	if((nano_fs.sector_size == 0) || (nano_fs.page_size == 0)

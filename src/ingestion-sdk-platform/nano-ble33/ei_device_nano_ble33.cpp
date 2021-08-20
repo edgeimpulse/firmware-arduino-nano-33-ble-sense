@@ -166,9 +166,9 @@ bool EiDeviceNanoBle33::get_sensor_list(const ei_device_sensor_t **sensor_list, 
 
     sensors[ACCELEROMETER].name = "Built-in accelerometer";
     sensors[ACCELEROMETER].start_sampling_cb = &ei_inertial_setup_data_sampling;
-    sensors[ACCELEROMETER].max_sample_length_s = available_bytes / (100 * SIZEOF_N_AXIS_SAMPLED);
     sensors[ACCELEROMETER].frequencies[0] = 62.5f;
     sensors[ACCELEROMETER].frequencies[1] = 100.0f;
+    sensors[ACCELEROMETER].max_sample_length_s = available_bytes / (sensors[ACCELEROMETER].frequencies[0] * SIZEOF_N_AXIS_SAMPLED * 2);
 
     sensors[MICROPHONE].name = "Built-in microphone";
     sensors[MICROPHONE].start_sampling_cb = &ei_microphone_sample_start;
@@ -177,6 +177,51 @@ bool EiDeviceNanoBle33::get_sensor_list(const ei_device_sensor_t **sensor_list, 
 
     *sensor_list      = sensors;
     *sensor_list_size = EI_DEVICE_N_SENSORS;
+
+    return false;
+}
+
+/**
+ * @brief      Create resolution list for snapshot setting
+ *             The studio and daemon require this list
+ * @param      snapshot_list       Place pointer to resolution list
+ * @param      snapshot_list_size  Write number of resolutions here
+ *
+ * @return     False if all went ok
+ */
+bool EiDeviceNanoBle33::get_snapshot_list(const ei_device_snapshot_resolutions_t **snapshot_list, size_t *snapshot_list_size,
+                                         const char **color_depth)
+{
+    snapshot_resolutions[0].width = 160;
+    snapshot_resolutions[0].height = 120;
+    snapshot_resolutions[1].width = 128;
+    snapshot_resolutions[1].height = 96;
+
+    *snapshot_list      = snapshot_resolutions;
+    *snapshot_list_size = EI_DEVICE_N_RESOLUTIONS;
+    *color_depth = "RGB";
+
+    return false;
+}
+
+/**
+ * @brief      Create resolution list for resizing
+ * @param      resize_list       Place pointer to resolution list
+ * @param      resize_list_size  Write number of resolutions here
+ *
+ * @return     False if all went ok
+ */
+bool EiDeviceNanoBle33::get_resize_list(
+    const ei_device_resize_resolutions_t **resize_list,
+    size_t *resize_list_size)
+{
+    resize_resolutions[0].width = 42;
+    resize_resolutions[0].height = 32;
+    resize_resolutions[1].width = 128;
+    resize_resolutions[1].height = 96;
+
+    *resize_list = resize_resolutions;
+    *resize_list_size = EI_DEVICE_N_RESIZE_RESOLUTIONS;
 
     return false;
 }
@@ -274,6 +319,15 @@ int ei_get_serial_available(void) {
  */
 char ei_get_serial_byte(void) {
     return Serial.read();
+}
+
+/**
+ * @brief      Write character to serial
+ *
+ * @param      cChar     Char addr to write
+ */
+void ei_putc(char cChar) {
+    Serial.write(&cChar, 1);
 }
 
 /* Private functions ------------------------------------------------------- */

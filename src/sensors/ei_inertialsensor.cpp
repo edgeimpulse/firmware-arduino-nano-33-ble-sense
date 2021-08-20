@@ -76,9 +76,19 @@ bool ei_inertial_sample_start(sampler_callback callsampler, float sample_interva
 
 bool ei_inertial_setup_data_sampling(void)
 {
-
-    if (ei_config_get_config()->sample_interval_ms < 10.0f) {
+    if (ei_config_get_config()->sample_interval_ms < 10.0f ) {
         ei_config_set_sample_interval(10.0f);
+    }
+
+    // Calculate number of bytes available on flash for sampling, reserve 1 block for header + overhead
+    uint32_t available_bytes = (ei_nano_fs_get_n_available_sample_blocks()-1) * ei_nano_fs_get_block_size();
+    // Check available sample size before sampling for the selected frequency
+    uint32_t requested_bytes = ceil((ei_config_get_config()->sample_length_ms / ei_config_get_config()->sample_interval_ms) * SIZEOF_N_AXIS_SAMPLED * 2);
+    if(requested_bytes > available_bytes) {
+        ei_printf("ERR: Sample length is too long. Maximum allowed is %ims at %.1fHz.\r\n", 
+            (int)floor(available_bytes / ((SIZEOF_N_AXIS_SAMPLED * 2) / ei_config_get_config()->sample_interval_ms)),
+            (1000 / ei_config_get_config()->sample_interval_ms));
+        return false;
     }
 
     sensor_aq_payload_info payload = {
@@ -93,5 +103,5 @@ bool ei_inertial_setup_data_sampling(void)
         /*{ "gyrX", "dps" }, { "gyrY", "dps" }, { "gyrZ", "dps" } */},
     };
 
-    ei_sampler_start_sampling(&payload, SIZEOF_N_AXIS_SAMPLED);
+    return ei_sampler_start_sampling(&payload, SIZEOF_N_AXIS_SAMPLED);
 }

@@ -23,6 +23,21 @@ typedef struct {
 //#endif
 } ei_device_sensor_t;
 
+typedef struct {
+	size_t width;
+	size_t height;
+	uint8_t color_depth;
+} ei_device_snapshot_resolutions_t;
+
+typedef struct {
+	size_t width;
+	size_t height;
+} ei_device_resize_resolutions_t;
+
+typedef struct {
+    char str[32];
+    int val;
+} ei_device_data_output_baudrate_t;
 
 /**
  * @brief      Default class for device characteristics
