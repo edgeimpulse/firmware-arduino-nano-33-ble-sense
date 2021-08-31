@@ -466,7 +466,7 @@ static bool prepare_snapshot(size_t width, size_t height, bool use_max_baudrate)
 }
 
 static void finish_snapshot() {
-    ei_camera_deinit();
+    // ei_camera_deinit();
 }
 
 /**
