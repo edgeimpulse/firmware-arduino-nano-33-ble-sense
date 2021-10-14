@@ -174,7 +174,8 @@ bool EiDeviceNanoBle33::get_sensor_list(const ei_device_sensor_t **sensor_list, 
     sensors[MICROPHONE].start_sampling_cb = &ei_microphone_sample_start;
     sensors[MICROPHONE].max_sample_length_s = available_bytes / (16000 * 2);
     sensors[MICROPHONE].frequencies[0] = 16000.0f;
-
+    sensors[MICROPHONE].frequencies[1] = 8000.0f;
+    sensors[MICROPHONE].frequencies[2] = 4000.0f;
     *sensor_list      = sensors;
     *sensor_list_size = EI_DEVICE_N_SENSORS;
 

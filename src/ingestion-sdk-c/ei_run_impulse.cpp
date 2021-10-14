@@ -125,6 +125,11 @@ void run_nn(bool debug)
 #elif defined(EI_CLASSIFIER_SENSOR) && EI_CLASSIFIER_SENSOR == EI_CLASSIFIER_SENSOR_MICROPHONE
 void run_nn(bool debug)
 {
+    if (EI_CLASSIFIER_FREQUENCY > 16000) {
+        ei_printf("ERR: Frequency is %d but can not be higher then 16000Hz\n", (int)EI_CLASSIFIER_FREQUENCY);
+        return;
+    }
+
     extern signal_t ei_microphone_get_signal();
     bool stop_inferencing = false;
     // summary of inferencing settings (from model_metadata.h)
@@ -135,7 +140,7 @@ void run_nn(bool debug)
     ei_printf("\tNo. of classes: %d\n", sizeof(ei_classifier_inferencing_categories) /
                                             sizeof(ei_classifier_inferencing_categories[0]));
 
-    if (ei_microphone_inference_start(EI_CLASSIFIER_RAW_SAMPLE_COUNT) == false) {
+    if (ei_microphone_inference_start(EI_CLASSIFIER_RAW_SAMPLE_COUNT, EI_CLASSIFIER_INTERVAL_MS) == false) {
         ei_printf("ERR: Failed to setup audio sampling\r\n");
         return;
     }
@@ -214,6 +219,11 @@ void run_nn(bool debug)
 
 void run_nn_continuous(bool debug)
 {
+    if (EI_CLASSIFIER_FREQUENCY > 16000) {
+        ei_printf("ERR: Frequency is %d but can not be higher then 16000Hz\n", (int)EI_CLASSIFIER_FREQUENCY);
+        return;
+    }
+
     bool stop_inferencing = false;
     int print_results = -(EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW);
     // summary of inferencing settings (from model_metadata.h)
@@ -227,7 +237,11 @@ void run_nn_continuous(bool debug)
     ei_printf("Starting inferencing, press 'b' to break\n");
 
     run_classifier_init();
-    ei_microphone_inference_start(EI_CLASSIFIER_SLICE_SIZE);
+
+    if (ei_microphone_inference_start(EI_CLASSIFIER_SLICE_SIZE, EI_CLASSIFIER_INTERVAL_MS) == false) {
+        ei_printf("ERR: Failed to setup audio sampling\r\n");
+        return;
+    }
 
     while (stop_inferencing == false) {
 
@@ -447,6 +461,7 @@ void run_nn(bool debug) {
         EI_IMPULSE_ERROR ei_error = run_classifier(&signal, &result, debug);
         if (ei_error != EI_IMPULSE_OK) {
             ei_printf("Failed to run impulse (%d)\n", ei_error);
+            ei_free(snapshot_mem);
             break;
         }
 

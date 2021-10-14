@@ -33,9 +33,6 @@
 #include "edge-impulse-sdk/dsp/numpy.hpp"
 
 
-#define AUDIO_SAMPLING_FREQUENCY            16000
-
-
 typedef struct {
     int16_t *buffers[2];
     uint8_t buf_select;
@@ -69,6 +66,7 @@ static bool record_ready = false;
 static uint32_t headerOffset;
 static uint32_t samples_required;
 static uint32_t current_sample;
+static uint32_t audio_sampling_frequency = 16000;
 
 //static signed short *inference_buffers[2];
 static inference_t inference;
@@ -91,9 +89,29 @@ Thread queue_thread(osPriorityHigh, AUDIO_THREAD_STACK_SIZE, AUDIO_THREAD_STACK,
 static EventQueue mic_queue;
 
 
-
+extern "C" {
+    #include <hal/nrf_pdm.h>
+}
 
 /* Private functions ------------------------------------------------------- */
+
+/**
+ * @brief PDM clock frequency calculation based on 32MHz clock and
+ * decimation filter ratio 80
+ * @details For more info on clock generation:
+ * https://infocenter.nordicsemi.com/index.jsp?topic=%2Fps_nrf5340%2Fpdm.html
+ * @param sampleRate in Hz
+ * @return uint32_t clk value
+ */
+static uint32_t pdm_clock_calculate(uint64_t sampleRate)
+{
+    const uint64_t PDM_RATIO = 80ULL;
+    const uint64_t CLK_32MHZ = 32000000ULL;
+    uint64_t clk_control = 4096ULL * (((sampleRate * PDM_RATIO) * 1048576ULL) / (CLK_32MHZ + ((sampleRate * PDM_RATIO) / 2ULL)));
+
+    return (uint32_t)clk_control;
+}
+
 
 static void ei_microphone_blink() {
     led = !led;
@@ -209,7 +227,7 @@ static bool create_header(void)
     sensor_aq_payload_info payload = {
         EiDevice.get_id_pointer(),
         EiDevice.get_type_pointer(),
-        1000.0f / static_cast<float>(AUDIO_SAMPLING_FREQUENCY),
+        1000.0f / static_cast<float>(audio_sampling_frequency),
         { { "audio", "wav" } }
     };
 
@@ -288,7 +306,7 @@ bool ei_microphone_record(uint32_t sample_length_ms, uint32_t start_delay_ms, bo
     return true;
 }
 
-bool ei_microphone_inference_start(uint32_t n_samples)
+bool ei_microphone_inference_start(uint32_t n_samples, float interval_ms)
 {
 
     inference.buffers[0] = (int16_t *)malloc(n_samples * sizeof(int16_t));
@@ -327,8 +345,15 @@ bool ei_microphone_inference_start(uint32_t n_samples)
     // initialize PDM with:
     // - one channel (mono mode)
     // - a 16 kHz sample rate
-    if (!PDM.begin(1, AUDIO_SAMPLING_FREQUENCY)) {
+    if (!PDM.begin(1, 16000)) {
         ei_printf("Failed to start PDM!");
+    }
+
+    /* Calclate sample rate from sample interval */
+    audio_sampling_frequency = (uint32_t)(1000.f / interval_ms);
+
+    if(audio_sampling_frequency != 16000) {
+        nrf_pdm_clock_set((nrf_pdm_freq_t)pdm_clock_calculate(audio_sampling_frequency));
     }
 
     // set the gain, defaults to 20
@@ -397,7 +422,7 @@ bool ei_microphone_inference_end(void)
 bool ei_microphone_sample_start(void)
 {
     // this sensor does not have settable interval...
-    // ei_config_set_sample_interval(static_cast<float>(1000) / static_cast<float>(AUDIO_SAMPLING_FREQUENCY));
+    // ei_config_set_sample_interval(static_cast<float>(1000) / static_cast<float>(audio_sampling_frequency));
     int sample_length_blocks;
 
     ei_printf("Sampling settings:\n");
@@ -440,8 +465,15 @@ bool ei_microphone_sample_start(void)
     // initialize PDM with:
     // - one channel (mono mode)
     // - a 16 kHz sample rate
-    if (!PDM.begin(1, AUDIO_SAMPLING_FREQUENCY)) {
+    if (!PDM.begin(1, 16000)) {
         ei_printf("Failed to start PDM!");
+    }
+
+    /* Calclate sample rate from sample interval */
+    audio_sampling_frequency = (uint32_t)(1000.f / ei_config_get_config()->sample_interval_ms);
+
+    if(audio_sampling_frequency != 16000) {
+        nrf_pdm_clock_set((nrf_pdm_freq_t)pdm_clock_calculate(audio_sampling_frequency));
     }
 
     // set the gain, defaults to 20

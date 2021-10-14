@@ -19,34 +19,27 @@
 * SOFTWARE.
 */
 
-#ifndef _EI_CLASSIFIER_DSP_BLOCKS_H_
-#define _EI_CLASSIFIER_DSP_BLOCKS_H_
+#ifndef _EI_CLASSIFIER_MODEL_VARIABLES_H_
+#define _EI_CLASSIFIER_MODEL_VARIABLES_H_
 
-#include "model-parameters/model_metadata.h"
-#include "model-parameters/model_variables.h"
-#include "edge-impulse-sdk/classifier/ei_run_dsp.h"
-#include "edge-impulse-sdk/classifier/ei_model_types.h"
+#include <stdint.h>
+#include "model_metadata.h"
 
-const size_t ei_dsp_blocks_size = 1;
-ei_model_dsp_t ei_dsp_blocks[ei_dsp_blocks_size] = {
-    { // DSP block 506
-        33,
-        &extract_spectral_analysis_features,
-        (void*)&ei_dsp_config_506,
-        ei_dsp_config_506_axes,
-        ei_dsp_config_506_axes_size
-    }
+const char* ei_classifier_inferencing_categories[] = { "idle", "snake", "updown", "wave" };
+
+uint8_t ei_dsp_config_506_axes[] = { 0, 1, 2 };
+const uint32_t ei_dsp_config_506_axes_size = 3;
+ei_dsp_config_spectral_analysis_t ei_dsp_config_506 = {
+    1,
+    3,
+    1.00000f,
+    "low",
+    3.00000f,
+    6,
+    128,
+    3,
+    0.10000f,
+    "0.1, 0.5, 1.0, 2.0, 5.0"
 };
 
-const size_t ei_dsp_blocks_i16_size = 1;
-ei_model_dsp_i16_t ei_dsp_blocks_i16[ei_dsp_blocks_i16_size] = {
-    { // DSP block 506
-        33,
-        &extract_spectral_analysis_features,
-        (void*)&ei_dsp_config_506,
-        ei_dsp_config_506_axes,
-        ei_dsp_config_506_axes_size
-    }
-};
-
-#endif // _EI_CLASSIFIER_DSP_BLOCKS_H_
+#endif // _EI_CLASSIFIER_MODEL_METADATA_H_
