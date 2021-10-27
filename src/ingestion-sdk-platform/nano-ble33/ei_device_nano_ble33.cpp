@@ -82,6 +82,13 @@ EiDeviceNanoBle33::EiDeviceNanoBle33(void)
         ,(*id_lsb >> 8) & 0xFF
         ,(*id_lsb >> 0) & 0xFF
         );
+
+    /* Clear frequency arrays */
+    for(int i = 0; i < EI_DEVICE_N_SENSORS; i++) {
+        for(int y = 0; y < EI_MAX_FREQUENCIES; y++) {
+            sensors[i].frequencies[y] = 0.f;
+        }
+    }
 }
 
 /**
@@ -162,7 +169,7 @@ bool EiDeviceNanoBle33::get_wifi_present_status(void)
 bool EiDeviceNanoBle33::get_sensor_list(const ei_device_sensor_t **sensor_list, size_t *sensor_list_size)
 {
     /* Calculate number of bytes available on flash for sampling, reserve 1 block for header + overhead */
-    uint32_t available_bytes = (ei_nano_fs_get_n_available_sample_blocks()-1) * ei_nano_fs_get_block_size();
+    uint32_t available_bytes = (filesys_get_n_available_sample_blocks()-1) * filesys_get_block_size();
 
     sensors[ACCELEROMETER].name = "Built-in accelerometer";
     sensors[ACCELEROMETER].start_sampling_cb = &ei_inertial_setup_data_sampling;
@@ -203,6 +210,26 @@ bool EiDeviceNanoBle33::get_snapshot_list(const ei_device_snapshot_resolutions_t
     *color_depth = "RGB";
 
     return false;
+}
+
+/**
+ * @brief Get byte size of memory block
+ *
+ * @return uint32_t size in bytes
+ */
+uint32_t EiDeviceNanoBle33::filesys_get_block_size(void)
+{
+    return ei_nano_fs_get_block_size();
+}
+
+/**
+ * @brief Get number of available blocks
+ *
+ * @return uint32_t
+ */
+uint32_t EiDeviceNanoBle33::filesys_get_n_available_sample_blocks(void)
+{
+    return ei_nano_fs_get_n_available_sample_blocks();
 }
 
 /**

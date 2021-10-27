@@ -82,6 +82,7 @@ INCLUDE+=" -I ./src/sensors"
 INCLUDE+=" -I ./src/QCBOR/inc"
 INCLUDE+=" -I ./src/QCBOR/src"
 INCLUDE+=" -I ./src/mbedtls_hmac_sha256_sw/"
+INCLUDE+=" -I ./src/firmware-sdk/"
 
 FLAGS="-DARDUINOSTL_M_H"
 FLAGS+=" -DMBED_HEAP_STATS_ENABLED=1"

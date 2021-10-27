@@ -27,9 +27,9 @@
 
 const char* ei_classifier_inferencing_categories[] = { "idle", "snake", "updown", "wave" };
 
-uint8_t ei_dsp_config_506_axes[] = { 0, 1, 2 };
-const uint32_t ei_dsp_config_506_axes_size = 3;
-ei_dsp_config_spectral_analysis_t ei_dsp_config_506 = {
+uint8_t ei_dsp_config_3_axes[] = { 0, 1, 2 };
+const uint32_t ei_dsp_config_3_axes_size = 3;
+ei_dsp_config_spectral_analysis_t ei_dsp_config_3 = {
     1,
     3,
     1.00000f,

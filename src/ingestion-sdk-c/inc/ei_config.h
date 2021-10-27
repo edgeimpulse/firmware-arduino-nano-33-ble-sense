@@ -26,26 +26,6 @@
 #include <stdint.h>
 #include "ei_config_types.h"
 
-#define EDGE_IMPULSE_MAX_FREQUENCIES        5
-
-
-
-// Available sensors to sample from on this board
-typedef struct {
-    // Name (e.g. 'Built-in accelerometer')
-    const char *name;
-    // Frequency list
-    float frequencies[EDGE_IMPULSE_MAX_FREQUENCIES];
-    // Max. sample length in seconds (could be depending on the size of the flash chip)
-    uint16_t max_sample_length_s;
-    // Start sampling, this function should be blocking and is called when sampling commences
-// #ifdef __MBED__
-//     Callback<bool()> start_sampling_cb;
-// #else
-    bool (*start_sampling_cb)();
-//#endif
-} ei_sensor_t;
-
 // Configuration should be writable and readable, so let's declare some pointers for that
 typedef struct {
     // Load the configuration from non-volatile storage

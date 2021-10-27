@@ -450,7 +450,7 @@ bool ei_microphone_sample_start(void)
 
     is_uploaded = false;
 
-    sampleBuffer = (int16_t *)malloc(ei_nano_fs_get_block_size());
+    sampleBuffer = (int16_t *)malloc(EiDevice.filesys_get_block_size());
 
     if (sampleBuffer == NULL) {
         return false;
@@ -459,8 +459,8 @@ bool ei_microphone_sample_start(void)
     // configure the data receive callback
     PDM.onReceive(&pdm_data_ready_callback);
 
-    // ei_printf("Sector size: %d\r\n", ei_nano_fs_get_block_size());
-    PDM.setBufferSize(ei_nano_fs_get_block_size());
+    // ei_printf("Sector size: %d\r\n", EiDevice.filesys_get_block_size());
+    PDM.setBufferSize(EiDevice.filesys_get_block_size());
 
     // initialize PDM with:
     // - one channel (mono mode)
@@ -479,7 +479,7 @@ bool ei_microphone_sample_start(void)
     // set the gain, defaults to 20
     PDM.setGain(127);
 
-    bool r = ei_microphone_record(ei_config_get_config()->sample_length_ms, (((samples_required <<1)/ ei_nano_fs_get_block_size()) * NANO_FS_BLOCK_ERASE_TIME_MS), true);
+    bool r = ei_microphone_record(ei_config_get_config()->sample_length_ms, (((samples_required <<1)/ EiDevice.filesys_get_block_size()) * NANO_FS_BLOCK_ERASE_TIME_MS), true);
     if (!r) {
         return r;
     }
@@ -498,13 +498,13 @@ bool ei_microphone_sample_start(void)
     }
 
     // load the first page in flash...
-    uint8_t *page_buffer = (uint8_t*)malloc(ei_nano_fs_get_block_size());
+    uint8_t *page_buffer = (uint8_t*)malloc(EiDevice.filesys_get_block_size());
     if (!page_buffer) {
         ei_printf("Failed to allocate a page buffer to write the hash\n");
         return false;
     }
 
-    int j = ei_nano_fs_read_sample_data(page_buffer, 0, ei_nano_fs_get_block_size());
+    int j = ei_nano_fs_read_sample_data(page_buffer, 0, EiDevice.filesys_get_block_size());
     if (j != 0) {
         ei_printf("Failed to read first page (%d)\n", j);
         free(page_buffer);
@@ -530,14 +530,14 @@ bool ei_microphone_sample_start(void)
         page_buffer[ei_mic_ctx.signature_index + (hash_ix * 2) + 1] = second_c;
     }
 
-    j = ei_nano_fs_erase_sampledata(0, ei_nano_fs_get_block_size());
+    j = ei_nano_fs_erase_sampledata(0, EiDevice.filesys_get_block_size());
     if (j != 0) {
         ei_printf("Failed to erase first page (%d)\n", j);
         free(page_buffer);
         return false;
     }
 
-    j = ei_nano_fs_write_samples(page_buffer, 0, ei_nano_fs_get_block_size());
+    j = ei_nano_fs_write_samples(page_buffer, 0, EiDevice.filesys_get_block_size());
 
     free(page_buffer);
 

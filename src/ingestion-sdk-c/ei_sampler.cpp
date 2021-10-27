@@ -26,6 +26,7 @@
 
 #include "ei_sampler.h"
 #include "ei_config_types.h"
+#include "ei_device_nano_ble33.h"
 #include "nano_fs_commands.h"
 
 #include "mbed.h"
@@ -137,13 +138,13 @@ bool ei_sampler_start_sampling(void *v_ptr_payload, uint32_t sample_size)
     current_sample = 0;
 
     // Minimum delay of 2000 ms for daemon
-    if(((sample_buffer_size / ei_nano_fs_get_block_size())+1) * NANO_FS_BLOCK_ERASE_TIME_MS < 2000) {
-        ThisThread::sleep_for(2000 - ((sample_buffer_size / ei_nano_fs_get_block_size())+1) * NANO_FS_BLOCK_ERASE_TIME_MS);
+    if(((sample_buffer_size / EiDevice.filesys_get_block_size())+1) * NANO_FS_BLOCK_ERASE_TIME_MS < 2000) {
+        ThisThread::sleep_for(2000 - ((sample_buffer_size / EiDevice.filesys_get_block_size())+1) * NANO_FS_BLOCK_ERASE_TIME_MS);
         ei_printf("Starting in %lu ms... (or until all flash was erased)\n", 2000);
     }
     else {
         ei_printf("Starting in %lu ms... (or until all flash was erased)\n",
-        ((sample_buffer_size / ei_nano_fs_get_block_size())+1) * NANO_FS_BLOCK_ERASE_TIME_MS);
+        ((sample_buffer_size / EiDevice.filesys_get_block_size())+1) * NANO_FS_BLOCK_ERASE_TIME_MS);
     }
 
 	if(ei_nano_fs_erase_sampledata(0, sample_buffer_size) != NANO_FS_CMD_OK) {
@@ -176,13 +177,13 @@ bool ei_sampler_start_sampling(void *v_ptr_payload, uint32_t sample_size)
     ctx_err = ei_mic_ctx.signature_ctx->finish(ei_mic_ctx.signature_ctx, ei_mic_ctx.hash_buffer.buffer);
 
     // load the first page in flash...
-    uint8_t *page_buffer = (uint8_t*)malloc(ei_nano_fs_get_block_size());
+    uint8_t *page_buffer = (uint8_t*)malloc(EiDevice.filesys_get_block_size());
     if (!page_buffer) {
         ei_printf("Failed to allocate a page buffer to write the hash\n");
         return false;
     }
 
-    int j = ei_nano_fs_read_sample_data(page_buffer, 0, ei_nano_fs_get_block_size());
+    int j = ei_nano_fs_read_sample_data(page_buffer, 0, EiDevice.filesys_get_block_size());
     if (j != 0) {
         ei_printf("Failed to read first page (%d)\n", j);
         free(page_buffer);
@@ -208,14 +209,14 @@ bool ei_sampler_start_sampling(void *v_ptr_payload, uint32_t sample_size)
         page_buffer[ei_mic_ctx.signature_index + (hash_ix * 2) + 1] = second_c;
     }
 
-    j = ei_nano_fs_erase_sampledata(0, ei_nano_fs_get_block_size());
+    j = ei_nano_fs_erase_sampledata(0, EiDevice.filesys_get_block_size());
     if (j != 0) {
         ei_printf("Failed to erase first page (%d)\n", j);
         free(page_buffer);
         return false;
     }
 
-    j = ei_nano_fs_write_samples(page_buffer, 0, ei_nano_fs_get_block_size());
+    j = ei_nano_fs_write_samples(page_buffer, 0, EiDevice.filesys_get_block_size());
 
     free(page_buffer);
 

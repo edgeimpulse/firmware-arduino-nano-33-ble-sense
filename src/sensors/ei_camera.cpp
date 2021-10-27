@@ -359,7 +359,7 @@ static bool take_snapshot(size_t width, size_t height, bool print_oks)
                     return false;
                 }
 
-                int r = base64_encode((const char*)per_pixel_buffer, per_pixel_buffer_ix, base64_buffer, base64_output_size);
+                int r = base64_encode_buffer((const char*)per_pixel_buffer, per_pixel_buffer_ix, base64_buffer, base64_output_size);
                 if (r < 0) {
                     ei_printf("ERR: Failed to base64 encode (%d)\r\n", r);
                     ei_free(signal_buf);
@@ -385,7 +385,7 @@ static bool take_snapshot(size_t width, size_t height, bool print_oks)
         return false;
     }
 
-    int r = base64_encode((const char*)per_pixel_buffer, per_pixel_buffer_ix, base64_buffer, new_base64_buffer_output_size);
+    int r = base64_encode_buffer((const char*)per_pixel_buffer, per_pixel_buffer_ix, base64_buffer, new_base64_buffer_output_size);
     if (r < 0) {
         ei_printf("ERR: Failed to base64 encode (%d)\r\n", r);
         ei_free(signal_buf);

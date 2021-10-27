@@ -29,7 +29,7 @@
 #include <math.h>
 
 #include "ei_device_nano_ble33.h"
-#include "at_base64.h"
+#include "at_base64_lib.h"
 #include "../edge-impulse-sdk/porting/ei_classifier_porting.h"
 #include "../edge-impulse-sdk/dsp/numpy_types.h"
 

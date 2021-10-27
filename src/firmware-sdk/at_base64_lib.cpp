@@ -1,17 +1,45 @@
-#include "at_base64.h"
+/*
+   at_base64lib.cpp and at_base64lib.h
 
-extern void ei_printf(const char *format, ...);
+   Copyright (C) 2004-2008 René Nyffenegger
 
-static const char *base64_chars =
-             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-             "abcdefghijklmnopqrstuvwxyz"
-             "0123456789+/";
+   This source code is provided 'as-is', without any express or implied
+   warranty. In no event will the author be held liable for any damages
+   arising from the use of this software.
 
-static inline bool is_base64(unsigned char c) {
-    return (isalnum(c) || (c == '+') || (c == '/'));
-}
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute it
+   freely, subject to the following restrictions:
 
-int base64_encode(const char *input, size_t input_size, char *output, size_t output_size) {
+   1. The origin of this source code must not be misrepresented; you must not
+      claim that you wrote the original source code. If you use this source code
+      in a product, an acknowledgment in the product documentation would be
+      appreciated but is not required.
+
+   2. Altered source versions must be plainly marked as such, and must not be
+      misrepresented as being the original source code.
+
+   3. This notice may not be removed or altered from any source distribution.
+
+   René Nyffenegger rene.nyffenegger@adp-gmbh.ch
+
+*/
+
+/* Include ----------------------------------------------------------------- */
+#include "at_base64_lib.h"
+
+
+/**
+ * @brief Base64 encode and write to output buffer, errors on buffer overflow
+ * 
+ * @param input 
+ * @param input_size 
+ * @param output 
+ * @param output_size 
+ * @return int number of bytes in output buffer, negative if error occured
+ */
+int base64_encode_buffer(const char *input, size_t input_size, char *output, size_t output_size)
+{
     size_t output_size_check = floor(input_size / 3 * 4);
     size_t mod = input_size % 3;
     output_size_check += mod;

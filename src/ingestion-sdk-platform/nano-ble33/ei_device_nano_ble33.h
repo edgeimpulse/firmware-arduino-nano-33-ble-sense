@@ -24,16 +24,22 @@
 #define EI_DEVICE_NANO_BLE33
 
 /* Include ----------------------------------------------------------------- */
-#include "ei_device_info.h"
+#include "ei_device_info_lib.h"
 
 /** Number of sensors used */
 #define EI_DEVICE_N_SENSORS					2
+#define EI_MAX_FREQUENCIES                  5
 #define EI_DEVICE_N_RESOLUTIONS				2
 #define EI_DEVICE_N_RESIZE_RESOLUTIONS		2
 
 /** C Callback types */
 typedef int (*c_callback)(uint8_t out_buffer[32], size_t *out_size);
 typedef bool (*c_callback_status)(void);
+
+typedef struct {
+	size_t width;
+	size_t height;
+} ei_device_resize_resolutions_t;
 
 /**
  * @brief      Class description and implementation of device specific 
@@ -58,6 +64,8 @@ public:
 	bool get_snapshot_list(const ei_device_snapshot_resolutions_t **resolution_list, size_t *resolution_list_size,
 						   const char **color_depth);
 	bool get_resize_list(const ei_device_resize_resolutions_t **resize_list,size_t *resize_list_size);
+    uint32_t filesys_get_block_size(void);
+    uint32_t filesys_get_n_available_sample_blocks(void);
 
 	c_callback get_id_function(void);
 	c_callback get_type_function(void);

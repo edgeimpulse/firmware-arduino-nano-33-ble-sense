@@ -81,7 +81,7 @@ bool ei_inertial_setup_data_sampling(void)
     }
 
     // Calculate number of bytes available on flash for sampling, reserve 1 block for header + overhead
-    uint32_t available_bytes = (ei_nano_fs_get_n_available_sample_blocks()-1) * ei_nano_fs_get_block_size();
+    uint32_t available_bytes = (EiDevice.filesys_get_n_available_sample_blocks()-1) * EiDevice.filesys_get_block_size();
     // Check available sample size before sampling for the selected frequency
     uint32_t requested_bytes = ceil((ei_config_get_config()->sample_length_ms / ei_config_get_config()->sample_interval_ms) * SIZEOF_N_AXIS_SAMPLED * 2);
     if(requested_bytes > available_bytes) {
