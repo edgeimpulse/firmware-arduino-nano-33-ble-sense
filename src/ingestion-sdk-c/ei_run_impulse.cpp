@@ -487,7 +487,7 @@ void run_nn(bool debug) {
 }
 
 #else
-
+void run_nn(bool debug) {}
 #error "EI_CLASSIFIER_SENSOR not configured, cannot configure `run_nn`"
 
 #endif  // EI_CLASSIFIER_SENSOR

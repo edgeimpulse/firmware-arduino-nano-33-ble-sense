@@ -5,11 +5,11 @@ PROJECT=firmware-arduino-nano-33-ble-sense
 BOARD=arduino:mbed:nano33ble
 COMMAND=$1
 if [ -z "$ARDUINO_CLI" ]; then
-	ARDUINO_CLI=$(which arduino-cli || true)
+    ARDUINO_CLI=$(which arduino-cli || true)
 fi
 DIRNAME="$(basename "$SCRIPTPATH")"
 EXPECTED_CLI_MAJOR=0
-EXPECTED_CLI_MINOR=13
+EXPECTED_CLI_MINOR=18
 
 if [ ! -x "$ARDUINO_CLI" ]; then
     echo "Cannot find 'arduino-cli' in your PATH. Install the Arduino CLI before you continue."
@@ -31,44 +31,33 @@ if (( CLI_MAJOR != EXPECTED_CLI_MAJOR || CLI_MINOR != EXPECTED_CLI_MINOR )); the
     echo "You're using an untested version of Arduino CLI, this might cause issues (found: $CLI_MAJOR.$CLI_MINOR.$CLI_REV, expected: $EXPECTED_CLI_MAJOR.$EXPECTED_CLI_MINOR.x)"
 fi
 
-has_arduino_core() {
-    $ARDUINO_CLI core list | grep "arduino:mbed" || true
-}
-HAS_ARDUINO_CORE="$(has_arduino_core)"
-if [ -z "$HAS_ARDUINO_CORE" ]; then
-    echo "Installing Arduino Mbed core..."
-    $ARDUINO_CLI core update-index
-    $ARDUINO_CLI core install arduino:mbed@1.1.6
-    echo "Installing Arduino Mbed core OK"
-fi
+echo "Installing dependencies..."
+$ARDUINO_CLI core update-index
 
-has_lsm9ds1_lib() {
-	$ARDUINO_CLI lib list | grep Arduino_LSM9DS1 || true
-}
-HAS_LSM9DS1_LIB="$(has_lsm9ds1_lib)"
-if [ -z "$HAS_LSM9DS1_LIB" ]; then
-    echo "Installing LSM9DS1 library..."
-    $ARDUINO_CLI lib update-index
-	$ARDUINO_CLI lib install Arduino_LSM9DS1@1.0.0	#Inertial sensor library
-    echo "Installing LSM9DS1 library OK"
-fi
+echo "Installing Arduino Mbed core..."
+$ARDUINO_CLI core install arduino:mbed@1.1.6
+echo "Installing Arduino Mbed core OK"
+
+echo "Installing LSM9DS1 library..."
+$ARDUINO_CLI lib install Arduino_LSM9DS1@1.0.0  #Inertial sensor library
+echo "Installing LSM9DS1 library OK"
 
 has_ov767x_lib() {
-	$ARDUINO_CLI lib list | grep Arduino_OV767X || true
+    $ARDUINO_CLI lib list | grep Arduino_OV767X || true
 }
 HAS_OV767X_LIB="$(has_ov767x_lib)"
 if [ -z "$HAS_OV767X_LIB" ]; then
     echo "Installing OV767X library..."
     $ARDUINO_CLI lib update-index
-	$ARDUINO_CLI lib install Arduino_OV767X@0.0.2	#Camera sensor library
+    $ARDUINO_CLI lib install Arduino_OV767X@0.0.2   #Camera sensor library
     echo "Installing OV767X library OK"
 fi
 
 # CLI v0.14 updates the name of this to --build-property
 if ((CLI_MAJOR >= 0 && CLI_MINOR >= 14)); then
-	BUILD_PROPERTIES_FLAG=--build-property
+    BUILD_PROPERTIES_FLAG=--build-property
 else
-	BUILD_PROPERTIES_FLAG=--build-properties
+    BUILD_PROPERTIES_FLAG=--build-properties
 fi
 
 INCLUDE="-I ./src"
@@ -96,29 +85,29 @@ FLAGS+=" -mfpu=fpv4-sp-d16"
 
 if [ "$COMMAND" = "--build" ];
 then
-	echo "Building $PROJECT"
-	$ARDUINO_CLI compile --fqbn  $BOARD $BUILD_PROPERTIES_FLAG build.extra_flags="$INCLUDE $FLAGS" --output-dir . &
-	pid=$! # Process Id of the previous running command
-	while kill -0 $pid 2>/dev/null
-	do
-		echo "Still building..."
-		sleep 2
-	done
-	wait $pid
-	ret=$?
-	if [ $ret -eq 0 ]; then
-		echo "Building $PROJECT done"
-	else
-		exit "Building $PROJECT failed"
-	fi
+    echo "Building $PROJECT"
+    $ARDUINO_CLI compile --fqbn  $BOARD $BUILD_PROPERTIES_FLAG build.extra_flags="$INCLUDE $FLAGS" --output-dir . &
+    pid=$! # Process Id of the previous running command
+    while kill -0 $pid 2>/dev/null
+    do
+        echo "Still building..."
+        sleep 2
+    done
+    wait $pid
+    ret=$?
+    if [ $ret -eq 0 ]; then
+        echo "Building $PROJECT done"
+    else
+        exit "Building $PROJECT failed"
+    fi
 elif [ "$COMMAND" = "--flash" ];
 then
-	$ARDUINO_CLI upload -p $($ARDUINO_CLI board list | grep Arduino | cut -d ' ' -f1) --fqbn $BOARD --input-dir .
+    $ARDUINO_CLI upload -p $($ARDUINO_CLI board list | grep Arduino | cut -d ' ' -f1) --fqbn $BOARD --input-dir .
 elif [ "$COMMAND" = "--all" ];
 then
-	$ARDUINO_CLI compile --fqbn  $BOARD $BUILD_PROPERTIES_FLAG build.extra_flags="$INCLUDE $FLAGS"
-	status=$?
-	[ $status -eq 0 ] && $ARDUINO_CLI upload -p $($ARDUINO_CLI board list | grep Arduino | cut -d ' ' -f1) --fqbn $BOARD --input-dir .
+    $ARDUINO_CLI compile --fqbn  $BOARD $BUILD_PROPERTIES_FLAG build.extra_flags="$INCLUDE $FLAGS"
+    status=$?
+    [ $status -eq 0 ] && $ARDUINO_CLI upload -p $($ARDUINO_CLI board list | grep Arduino | cut -d ' ' -f1) --fqbn $BOARD --input-dir .
 else
-	echo "Nothing to do for target"
+    echo "Nothing to do for target"
 fi

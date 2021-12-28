@@ -94,7 +94,7 @@ bool ei_camera_init(void) {
     if (is_initialised) return true;
     
     if (!Cam.begin(QQVGA, RGB565, 1)) { // VGA downsampled to QQVGA (OV7675)
-        ei_printf("ERR: Failed to initialize camera\r\n");
+        ei_printf("OV7676x camera not attached or failed to init\r\n");
         return false;
     }
     is_initialised = true;
