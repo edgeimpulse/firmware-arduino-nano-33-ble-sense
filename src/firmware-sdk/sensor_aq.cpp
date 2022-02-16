@@ -27,13 +27,7 @@
 //#include "qcbor.h"
 //#include "setup.h"
 #include "sensor_aq.h"
-// detect POSIX, and use FILE* in that case
-#if !defined(EI_SENSOR_AQ_STREAM) && (defined (__unix__) || (defined (__APPLE__) && defined (__MACH__)))
-#include <stdio.h>
-#define EI_SENSOR_AQ_STREAM     FILE
-#elif !defined(EI_SENSOR_AQ_STREAM)
-#error "EI_SENSOR_AQ_STREAM not defined, and not on POSIX system. Please specify the EI_SENSOR_AQ_STREAM macro"
-#endif
+
 
 extern void ei_printf(const char *format, ...);
 

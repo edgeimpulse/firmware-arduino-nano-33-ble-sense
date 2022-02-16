@@ -38,15 +38,6 @@ ei_model_dsp_t ei_dsp_blocks[ei_dsp_blocks_size] = {
     }
 };
 
-const size_t ei_dsp_blocks_i16_size = 1;
-ei_model_dsp_i16_t ei_dsp_blocks_i16[ei_dsp_blocks_i16_size] = {
-    { // DSP block 3
-        33,
-        &extract_spectral_analysis_features,
-        (void*)&ei_dsp_config_3,
-        ei_dsp_config_3_axes,
-        ei_dsp_config_3_axes_size
-    }
-};
+
 
 #endif // _EI_CLASSIFIER_DSP_BLOCKS_H_

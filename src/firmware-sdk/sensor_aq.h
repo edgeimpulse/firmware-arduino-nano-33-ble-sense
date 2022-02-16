@@ -26,10 +26,19 @@
 
 /* Include ----------------------------------------------------------------- */
 #include "qcbor.h"
-#include "mbed.h"
+#include <stdio.h>
 
-using namespace rtos;
-using namespace events;
+// detect POSIX, and use FILE* in that case
+#if !defined(EI_SENSOR_AQ_STREAM) && (defined (__unix__) || (defined (__APPLE__) && defined (__MACH__)))
+#include <time.h>
+#define EI_SENSOR_AQ_STREAM     FILE
+#elif !defined(EI_SENSOR_AQ_STREAM)
+#error "EI_SENSOR_AQ_STREAM not defined, and not on POSIX system. Please specify the EI_SENSOR_AQ_STREAM macro"
+#endif
+
+#ifdef __MBED__
+#include "mbed.h"
+#endif
 
 #define EI_MAX_SENSOR_AXES                 20
 

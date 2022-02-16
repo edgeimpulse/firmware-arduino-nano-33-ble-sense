@@ -4,10 +4,15 @@
 #include "at_cmd_repl_mbed.h"
 #include "ei_microphone.h"
 #include "ei_inertialsensor.h"
+#include "ei_environmentsensor.h"
+#include "ei_interactionsensor.h"
 #include "ei_camera.h"
+
 #include "ei_sampler.h"
 #include "ei_run_impulse.h"
 
+
+EiDeviceInfo *EiDevInfo = dynamic_cast<EiDeviceInfo*>(&EiDevice);
 EventQueue main_application_queue;
 static unsigned char repl_stack[8 * 1024];
 static AtCmdRepl repl(&main_application_queue, ei_get_serial(), sizeof(repl_stack), repl_stack);
@@ -79,6 +84,8 @@ void ei_main() {
     // }
 
     ei_inertial_init();
+    ei_environment_init();
+    ei_interaction_init();
     ei_camera_init();
     ei_nano_fs_init();
     

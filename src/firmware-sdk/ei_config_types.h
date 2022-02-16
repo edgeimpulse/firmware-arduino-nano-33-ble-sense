@@ -1,6 +1,10 @@
 #ifndef _EI_CONFIG_TYPES_H
 #define _EI_CONFIG_TYPES_H
 
+/** ei sampler callback function, call with sample data */
+typedef bool (*sampler_callback)(const void *sample_buf, uint32_t byteLenght);
+typedef bool (*starter_callback)(sampler_callback callback, float sample_interval_ms);
+
 // return types
 typedef enum {
     EI_CONFIG_OK = 0,
@@ -8,6 +12,7 @@ typedef enum {
     EI_CONFIG_CONTEXT_ERROR = -2,
     EI_CONFIG_NO_CONTEXT = -8,
     EI_CONFIG_WIFI_CONN_FAILED = -9,
+    EI_CONFIG_NOT_IMPLEMENTED = -10,
 } EI_CONFIG_ERROR;
 
 // same as https://github.com/ARMmbed/mbed-os/blob/d4122b0b3a091d3f1130f3bb0d91c96f9183e2de/features/netsocket/nsapi_types.h#L115

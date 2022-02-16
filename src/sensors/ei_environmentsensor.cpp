@@ -1,5 +1,5 @@
-/* Edge Impulse inferencing library
- * Copyright (c) 2021 EdgeImpulse Inc.
+/* Edge Impulse ingestion SDK
+ * Copyright (c) 2020 EdgeImpulse Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,18 +20,47 @@
  * SOFTWARE.
  */
 
-#ifndef _EDGE_IMPULSE_MODEL_TYPES_H_
-#define _EDGE_IMPULSE_MODEL_TYPES_H_
-
+/* Include ----------------------------------------------------------------- */
 #include <stdint.h>
-#include "edge-impulse-sdk/dsp/numpy.hpp"
+#include <stdlib.h>
 
-typedef struct {
-    size_t n_output_features;
-    int (*extract_fn)(ei::signal_t *signal, ei::matrix_t *output_matrix, void *config, const float frequency);
-    void *config;
-    uint8_t *axes;
-    size_t axes_size;
-} ei_model_dsp_t;
+#include "ei_environmentsensor.h"
+#include "ei_device_nano_ble33.h"
+#include "sensor_aq.h"
 
-#endif // _EDGE_IMPULSE_MODEL_TYPES_H_
+#include <Arduino_HTS221.h>
+#include <Arduino_LPS22HB.h>
+#include "mbed.h"
+
+/* Constant defines -------------------------------------------------------- */
+extern void ei_printf(const char *format, ...);
+
+static float htps_data[ENVIRONMENT_AXIS_SAMPLED];
+
+bool ei_environment_init(void)
+{
+	if (!HTS.begin()) {
+		ei_printf("Failed to initialize HTS!\r\n");
+	}
+	else {
+		ei_printf("HTS initialized\r\n");
+	}
+	if (!BARO.begin()) {
+		ei_printf("Failed to initialize BARO!\r\n");
+	}
+	else {
+		ei_printf("BARO initialized\r\n");
+	}
+
+    ei_add_sensor_to_fusion_list(environment_sensor);
+}
+
+
+float *ei_fusion_environment_read_data(int n_samples)
+{
+	htps_data[0] = HTS.readTemperature();
+	htps_data[1] = HTS.readHumidity();
+	htps_data[2] = BARO.readPressure(); // (PSI/MILLIBAR/KILOPASCAL) default kPa
+
+	return htps_data;
+}

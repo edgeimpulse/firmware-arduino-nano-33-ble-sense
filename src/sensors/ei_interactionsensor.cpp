@@ -20,37 +20,52 @@
  * SOFTWARE.
  */
 
-#ifndef _EI_INERTIALSENSOR_H
-#define _EI_INERTIALSENSOR_H
-
 /* Include ----------------------------------------------------------------- */
-#include "ei_config_types.h"
-#include "ei_fusion.h"
+#include <stdint.h>
+#include <stdlib.h>
 
-/** Number of axis used and sample data format */
-typedef float sample_format_t;
-#define N_AXIS_SAMPLED                      3
-#define SIZEOF_N_AXIS_SAMPLED               (sizeof(sample_format_t) * N_AXIS_SAMPLED)
+#include "ei_interactionsensor.h"
+#include "ei_device_nano_ble33.h"
+#include "sensor_aq.h"
 
-#define INERTIAL_AXIS_SAMPLED			    9
+#include <Arduino_APDS9960.h>
+#include "mbed.h"
 
-/* Function prototypes ----------------------------------------------------- */
-bool ei_inertial_init(void);
-bool ei_inertial_sample_start(sampler_callback callback, float sample_interval_ms);
-bool ei_inertial_setup_data_sampling(void);
+/* Constant defines -------------------------------------------------------- */
+extern void ei_printf(const char *format, ...);
 
-float *ei_fusion_inertial_read_data(int n_samples);
-static const ei_device_fusion_sensor_t inertial_sensor = {
-    // name of sensor module to be displayed in fusion list
-    "Inertial",
-    // number of sensor module axis
-    INERTIAL_AXIS_SAMPLED,
-    // sampling frequencies
-    { 20.0f, 62.5f, 100.0f },
-    // axis name and units payload (must be same order as read in)
-    { {"accX", "m/s2"}, {"accY", "m/s2"}, {"accZ", "m/s2"}, {"gryX", "m/s2"}, {"gryY", "m/s2"}, {"gryZ", "m/s2"}, {"magX", "uT"}, {"magY", "uT"}, {"magZ", "uT"} }, 
-    // reference to read data function
-    &ei_fusion_inertial_read_data
-};
+static float apds_data[INTERACTION_AXIS_SAMPLED];
+static int temp_data[4];
 
-#endif
+bool ei_interaction_init(void)
+{
+	if (!APDS.begin()) {
+		ei_printf("Failed to initialize APDS!\r\n");
+	}
+	else {
+		ei_printf("APDS initialized\r\n");
+    }
+    ei_add_sensor_to_fusion_list(interaction_sensor);
+}
+
+float *ei_fusion_interaction_read_data(int n_samples)
+{
+    if (APDS.colorAvailable()) {
+        APDS.readColor(temp_data[0], temp_data[1], temp_data[2], temp_data[3]);
+
+        apds_data[0] = temp_data[0];
+        apds_data[1] = temp_data[1];
+        apds_data[2] = temp_data[2];
+        apds_data[3] = temp_data[3];
+    }
+
+    if (APDS.proximityAvailable()) {
+        apds_data[4] = (float)APDS.readProximity();
+    }
+
+    if (APDS.gestureAvailable()) {
+        apds_data[5] = (float)APDS.readGesture();
+    }
+
+    return apds_data;
+}

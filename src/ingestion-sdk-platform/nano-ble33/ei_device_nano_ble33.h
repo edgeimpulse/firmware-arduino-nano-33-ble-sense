@@ -66,6 +66,8 @@ public:
 	bool get_resize_list(const ei_device_resize_resolutions_t **resize_list,size_t *resize_list_size);
     uint32_t filesys_get_block_size(void);
     uint32_t filesys_get_n_available_sample_blocks(void);
+    bool start_sample_thread(void (*sample_read_cb)(void), float sample_interval_ms);
+    bool stop_sample_thread(void);
 
 	c_callback get_id_function(void);
 	c_callback get_type_function(void);

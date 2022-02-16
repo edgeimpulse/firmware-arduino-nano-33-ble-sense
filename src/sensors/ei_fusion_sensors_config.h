@@ -1,4 +1,4 @@
-/* Edge Impulse inferencing library
+/* Edge Impulse ingestion SDK
  * Copyright (c) 2021 EdgeImpulse Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,18 +20,16 @@
  * SOFTWARE.
  */
 
-#ifndef _EDGE_IMPULSE_MODEL_TYPES_H_
-#define _EDGE_IMPULSE_MODEL_TYPES_H_
+#ifndef EI_FUSION_SENSORS_CONFIG_H
+#define EI_FUSION_SENSORS_CONFIG_H
 
-#include <stdint.h>
-#include "edge-impulse-sdk/dsp/numpy.hpp"
+#define NUM_FUSION_SENSORS       3  // number of fusable sensor modules
+#define NUM_MAX_FUSIONS          3  // max number of sensor module combinations
+#define FUSION_FREQUENCY         12.5f // sampling frequency for fusion samples
+#define NUM_MAX_FUSION_AXIS      20 // max number of axis to sample
+#define SIZEOF_SENSOR_NAME       20 // char alloc for sensor module name
 
-typedef struct {
-    size_t n_output_features;
-    int (*extract_fn)(ei::signal_t *signal, ei::matrix_t *output_matrix, void *config, const float frequency);
-    void *config;
-    uint8_t *axes;
-    size_t axes_size;
-} ei_model_dsp_t;
+/** Format used for fusion */
+typedef float fusion_sample_format_t;
 
-#endif // _EDGE_IMPULSE_MODEL_TYPES_H_
+#endif // EI_FUSION_SENSORS_CONFIG_H

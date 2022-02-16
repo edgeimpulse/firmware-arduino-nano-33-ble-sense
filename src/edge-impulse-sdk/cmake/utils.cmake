@@ -19,6 +19,11 @@ MACRO(RECURSIVE_FIND_FILE return_list dir pattern)
     SET(${return_list} ${dir_list})
 ENDMACRO()
 
+MACRO(RECURSIVE_FIND_FILE_APPEND return_list dir pattern)
+    RECURSIVE_FIND_FILE( append_list ${dir} ${pattern} )
+    LIST(APPEND ${return_list} ${append_list})
+ENDMACRO()
+
 MACRO(SOURCE_FILES return_list dir pattern)
     FILE(GLOB new_list "${dir}/${pattern}")
     SET(dir_list "")

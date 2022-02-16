@@ -26,8 +26,10 @@
 #include "ei_device_nano_ble33.h"
 #include "ei_inertialsensor.h"
 #include "ei_microphone.h"
+#include "ei_fusion.h"
 #include "ei_camera.h"
 #include "setup.h"
+
 
 #if defined(EI_CLASSIFIER_SENSOR) && EI_CLASSIFIER_SENSOR == EI_CLASSIFIER_SENSOR_ACCELEROMETER
 
@@ -286,6 +288,106 @@ void run_nn_continuous(bool debug)
     }
 
     ei_microphone_inference_end();
+}
+
+#elif defined(EI_CLASSIFIER_SENSOR) && EI_CLASSIFIER_SENSOR == EI_CLASSIFIER_SENSOR_FUSION
+
+static float fusion_buf[NUM_MAX_FUSION_AXIS];
+static int fusion_ready = 0;
+
+static bool fusion_data_callback(const void *sample_buf, uint32_t byteLength)
+{
+    float *buffer = (float *)sample_buf;
+    for (int i = 0; i < (byteLength / sizeof(float)); i++) {
+        fusion_buf[i] = buffer[i];
+    }
+
+    if (fusion_ready == 1) {
+        fusion_ready = 0;
+        return true;
+    } else
+        return false;
+}
+
+static void fusion_read_data(float *values, size_t value_size)
+{
+    for (int i = 0; i < value_size; i++) {
+        values[i] = fusion_buf[i];
+    }
+}
+
+void run_nn(bool debug)
+{
+    char *axis_name = EI_CLASSIFIER_FUSION_AXES_STRING;
+    if (!ei_connect_fusion_list(axis_name, AXIS_FORMAT)) {
+        ei_printf("Failed to find sensor '%s' in the sensor list\n", axis_name);
+        return;
+    }
+
+    bool stop_inferencing = false;
+    // summary of inferencing settings (from model_metadata.h)
+    ei_printf("Inferencing settings:\n");
+    ei_printf("\tInterval: %.2f ms.\n", (float)EI_CLASSIFIER_INTERVAL_MS);
+    ei_printf("\tFrame size: %d\n", EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE);
+    ei_printf("\tSample length: %.0f ms.\n",
+              1000.0f * static_cast<float>(EI_CLASSIFIER_RAW_SAMPLE_COUNT) /
+                  (1000.0f / static_cast<float>(EI_CLASSIFIER_INTERVAL_MS)));
+    ei_printf("\tNo. of classes: %d\n", sizeof(ei_classifier_inferencing_categories) /
+                                            sizeof(ei_classifier_inferencing_categories[0]));
+
+    ei_printf("Starting inferencing, press 'b' to break\n");
+
+    while (stop_inferencing == false) {
+        ei_printf("Starting inferencing in 2 seconds...\n");
+
+        // instead of wait_ms, we'll wait on the signal, this allows threads to cancel us...
+        if (ei_sleep(2000) != EI_IMPULSE_OK) {
+            break;
+        }
+
+        while (ei_get_serial_available() > 0) {
+            if (ei_get_serial_byte() == 'b') {
+                ei_printf("Inferencing stopped by user\r\n");
+                stop_inferencing = true;
+            }
+        }
+
+        if (stop_inferencing) {
+            break;
+        }
+
+        ei_printf("Sampling...\n");
+
+        ei_fusion_sample_start(&fusion_data_callback, EI_CLASSIFIER_INTERVAL_MS);
+
+        // run the impulse: DSP, neural network and the Anomaly algorithm
+        ei_impulse_result_t result = {0};
+        EI_IMPULSE_ERROR err = run_impulse(&result, &fusion_read_data, debug);
+        if (err != EI_IMPULSE_OK) {
+            ei_printf("Failed to run impulse (%d)\n", err);
+            break;
+        }
+
+        fusion_ready = 1;
+
+        // print the predictions
+        ei_printf("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
+                  result.timing.dsp, result.timing.classification, result.timing.anomaly);
+        for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
+            ei_printf("    %s: %.5f\n", result.classification[ix].label,
+                      result.classification[ix].value);
+        }
+#if EI_CLASSIFIER_HAS_ANOMALY == 1
+        ei_printf("    anomaly score: %.3f\n", result.anomaly);
+#endif
+
+        while (ei_get_serial_available() > 0) {
+            if (ei_get_serial_byte() == 'b') {
+                ei_printf("Inferencing stopped by user\r\n");
+                stop_inferencing = true;
+            }
+        }
+    }
 }
 
 #elif defined(EI_CLASSIFIER_SENSOR) && EI_CLASSIFIER_SENSOR == EI_CLASSIFIER_SENSOR_CAMERA

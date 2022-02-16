@@ -36,10 +36,6 @@
 using namespace rtos;
 using namespace events;
 
-
-/** @todo Should be called by function pointer */
-extern bool ei_inertial_sample_start(sampler_callback callback, float sample_interval_ms);
-
 extern void ei_printf(const char *format, ...);
 extern ei_config_t *ei_config_get_config();
 extern EI_CONFIG_ERROR ei_config_set_sample_interval(float interval);
@@ -115,7 +111,7 @@ static bool create_header(sensor_aq_payload_info *payload);
  *
  * @return     true if successful
  */
-bool ei_sampler_start_sampling(void *v_ptr_payload, uint32_t sample_size)
+bool ei_sampler_start_sampling(void *v_ptr_payload, starter_callback ei_sample_start, uint32_t sample_size)
 {
     sensor_aq_payload_info *payload = (sensor_aq_payload_info *)v_ptr_payload;
 
@@ -156,7 +152,7 @@ bool ei_sampler_start_sampling(void *v_ptr_payload, uint32_t sample_size)
         return false;
 
 
-    if(ei_inertial_sample_start(&sample_data_callback, ei_config_get_config()->sample_interval_ms) == false)
+    if(ei_sample_start(&sample_data_callback, ei_config_get_config()->sample_interval_ms) == false)
         return false;
 
 	ei_printf("Sampling...\n");

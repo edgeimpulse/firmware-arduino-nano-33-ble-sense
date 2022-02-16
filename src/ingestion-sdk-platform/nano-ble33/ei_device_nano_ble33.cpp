@@ -31,6 +31,9 @@
 #include "Arduino.h"
 #include "mbed.h"
 
+using namespace rtos;
+using namespace events;
+
 /* Constants --------------------------------------------------------------- */
 
 /** Memory location for the arduino device address */
@@ -59,6 +62,11 @@ static char ei_device_id[DEVICE_ID_MAX_SIZE];
 
 /** Device object, for this class only 1 object should exist */
 EiDeviceNanoBle33 EiDevice;
+
+/** MBED thread */
+Thread fusion_thread;
+EventQueue fusion_queue;
+mbed::Ticker fusion_sample_rate;
 
 /* Private function declarations ------------------------------------------- */
 static int get_id_c(uint8_t out_buffer[32], size_t *out_size);
@@ -230,6 +238,29 @@ uint32_t EiDeviceNanoBle33::filesys_get_block_size(void)
 uint32_t EiDeviceNanoBle33::filesys_get_n_available_sample_blocks(void)
 {
     return ei_nano_fs_get_n_available_sample_blocks();
+}
+
+/**
+ * @brief Setup timer or thread with given interval and call cb function each period
+ * @param sample_read_cb
+ * @param sample_interval_ms
+ * @return true
+ */
+bool EiDeviceNanoBle33::start_sample_thread(void (*sample_read_cb)(void), float sample_interval_ms)
+{
+    fusion_thread.start(callback(&fusion_queue, &EventQueue::dispatch_forever));
+    fusion_sample_rate.attach(fusion_queue.event(sample_read_cb), (sample_interval_ms / 1000.f));
+    return true;
+}
+
+/**
+ * @brief Stop timer of thread
+ * @return true
+ */
+bool EiDeviceNanoBle33::stop_sample_thread(void)
+{
+    fusion_sample_rate.detach();
+    return true;
 }
 
 /**

@@ -1953,27 +1953,7 @@ public:
         return EIDSP_OK;
     }
 
-    static int signal_from_buffer_i16(EIDSP_i16 *data_i16, size_t data_size, signal_i16_t *signal)
-    {
-        signal->total_length = data_size;
-#ifdef __MBED__
-        signal->get_data = mbed::callback(&numpy::signal_get_data_i16, data_i16);
-#else
-        signal->get_data = [data_i16](size_t offset, size_t length, EIDSP_i16 *out_ptr) {
-            return numpy::signal_get_data_i16(data_i16, offset, length, out_ptr);
-        };
 #endif
-        return EIDSP_OK;
-    }
-#endif
-
-    static int signal_from_buffer_pointer_function_q15(size_t data_size, signal_i16_t *signal, int (*data_i16)(size_t, size_t, EIDSP_i16 *))
-    {
-        signal->total_length = data_size;
-        signal->get_data = data_i16;
-
-        return EIDSP_OK;
-    }
 
 #if defined ( __GNUC__ )
 #pragma GCC diagnostic push

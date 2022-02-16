@@ -1,5 +1,5 @@
-/* Edge Impulse inferencing library
- * Copyright (c) 2021 EdgeImpulse Inc.
+/* Edge Impulse ingestion SDK
+ * Copyright (c) 2020 EdgeImpulse Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,18 +20,31 @@
  * SOFTWARE.
  */
 
-#ifndef _EDGE_IMPULSE_MODEL_TYPES_H_
-#define _EDGE_IMPULSE_MODEL_TYPES_H_
+#ifndef _EI_ENVIRONMENTSENSOR_H
+#define _EI_ENVIRONMENTSENSOR_H
 
-#include <stdint.h>
-#include "edge-impulse-sdk/dsp/numpy.hpp"
+/* Include ----------------------------------------------------------------- */
+#include "ei_config_types.h"
+#include "ei_fusion.h"
 
-typedef struct {
-    size_t n_output_features;
-    int (*extract_fn)(ei::signal_t *signal, ei::matrix_t *output_matrix, void *config, const float frequency);
-    void *config;
-    uint8_t *axes;
-    size_t axes_size;
-} ei_model_dsp_t;
+/** Number of axis used and sample data format */
+#define ENVIRONMENT_AXIS_SAMPLED			3
 
-#endif // _EDGE_IMPULSE_MODEL_TYPES_H_
+/* Function prototypes ----------------------------------------------------- */
+bool ei_environment_init(void);
+float *ei_fusion_environment_read_data(int n_samples);
+
+static const ei_device_fusion_sensor_t environment_sensor = {
+    // name of sensor module to be displayed in fusion list
+    "Environmental",
+    // number of sensor module axis
+    ENVIRONMENT_AXIS_SAMPLED,
+    // sampling frequencies
+    { 1.0f, 12.5f },
+    // axis name and units payload (must be same order as read in)
+    { {"temperature", "degC"}, {"humidity", "%"}, {"pressure", "kPa"} },
+    // reference to read data function
+    &ei_fusion_environment_read_data
+};
+
+#endif

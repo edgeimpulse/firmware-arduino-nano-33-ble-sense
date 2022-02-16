@@ -29,6 +29,7 @@
 
 #include "ei_device_nano_ble33.h"
 #include "ei_camera.h"
+#include "ei_fusion.h"
 
 #define EDGE_IMPULSE_AT_COMMAND_VERSION        "1.6.0"
 
@@ -294,12 +295,17 @@ static void at_list_sensors() {
     }
 }
 
+static void at_list_fusion_sensors() {
+    ei_built_sensor_fusion_list();
+}
+
 static void at_list_config() {
     ei_printf("===== Device info =====\n");
     at_device_info();
     ei_printf("\n");
     ei_printf("===== Sensors ======\n");
     at_list_sensors();
+    at_list_fusion_sensors();
     ei_printf("\n");
     if (ei_has_camera()) {
         ei_printf("===== Snapshot ======\n");
@@ -465,24 +471,33 @@ static void at_sample_start(char *sensor_name) {
 
     const ei_device_sensor_t *list;
     size_t list_size;
+    bool ret;
 
     int r = EiDevice.get_sensor_list((const ei_device_sensor_t **)&list, &list_size);
     if (r != 0) {
-        ei_printf("Failed to get sensor list (%d)\n", r);
+        ei_printf("ERR: Failed to get sensor list (%d)\n", r);
         return;
     }
 
     for (size_t ix = 0; ix < list_size; ix++) {
         if (strcmp(list[ix].name, sensor_name) == 0) {
-            bool r = list[ix].start_sampling_cb();
-            if (!r) {
-                ei_printf("Failed to start sampling\n");
+            ret = list[ix].start_sampling_cb();
+            if (!ret) {
+                ei_printf("ERR: Failed to start sampling\n");
             }
             return;
         }
     }
-
-    ei_printf("Failed to find sensor '%s' in the sensor list\n", sensor_name);
+    
+    if (ei_connect_fusion_list(sensor_name, SENSOR_FORMAT)) {
+        ret = ei_fusion_setup_data_sampling();
+        if (!ret) {
+            ei_printf("ERR: Failed to start sensor fusion sampling\n");
+        }
+    }
+    else {
+        ei_printf("ERR: Failed to find sensor '%s' in the sensor list\n", sensor_name);
+    }
 }
 
 static void at_clear_files_data(char *filename) {

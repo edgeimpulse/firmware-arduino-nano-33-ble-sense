@@ -42,6 +42,39 @@ echo "Installing LSM9DS1 library..."
 $ARDUINO_CLI lib install Arduino_LSM9DS1@1.0.0  #Inertial sensor library
 echo "Installing LSM9DS1 library OK"
 
+has_hts221_lib() {
+    $ARDUINO_CLI lib list | grep Arduino_HTS221 || true
+}
+HAS_HTS221_LIB="$(has_hts221_lib)"
+if [ -z "$HAS_HTS221_LIB" ]; then
+    echo "Installing HTS221 library..."
+    $ARDUINO_CLI lib update-index
+    $ARDUINO_CLI lib install Arduino_HTS221@1.0.0	#Environment sensor library
+    echo "Installing HTS221 library OK"
+fi
+
+has_lps22hb_lib() {
+	$ARDUINO_CLI lib list | grep Arduino_LPS22HB || true
+}
+HAS_LPS22HB_LIB="$(has_lps22hb_lib)"
+if [ -z "$HAS_LPS22HB_LIB" ]; then
+    echo "Installing LPS22HB library..."
+    $ARDUINO_CLI lib update-index
+    $ARDUINO_CLI lib install Arduino_LPS22HB@1.0.0	#Pressure sensor library
+    echo "Installing LPS22HB library OK"
+fi
+
+has_apds9960_lib() {
+	$ARDUINO_CLI lib list | grep Arduino_APDS9960 || true
+}
+HAS_APDS9960_LIB="$(has_apds9960_lib)"
+if [ -z "$HAS_APDS9960_LIB" ]; then
+    echo "Installing APDS9960 library..."
+    $ARDUINO_CLI lib update-index
+    $ARDUINO_CLI lib install Arduino_APDS9960@1.0.3	#Interaction sensor library
+    echo "Installing APDS9960 library OK"
+fi
+
 has_ov767x_lib() {
     $ARDUINO_CLI lib list | grep Arduino_OV767X || true
 }
@@ -49,7 +82,7 @@ HAS_OV767X_LIB="$(has_ov767x_lib)"
 if [ -z "$HAS_OV767X_LIB" ]; then
     echo "Installing OV767X library..."
     $ARDUINO_CLI lib update-index
-    $ARDUINO_CLI lib install Arduino_OV767X@0.0.2   #Camera sensor library
+    $ARDUINO_CLI lib install Arduino_OV767X@0.0.2	#Camera sensor library
     echo "Installing OV767X library OK"
 fi
 

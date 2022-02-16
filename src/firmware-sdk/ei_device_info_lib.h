@@ -158,6 +158,29 @@ public:
         return true;
     }
 
+    /**
+     * @brief      Get byte size of memory block
+     *
+     * @return     uint32_t size in bytes
+     */
+    virtual uint32_t filesys_get_block_size(void)
+    {
+        return 0;
+    }
+
+    /**
+     * @brief      Get number of available blocks
+     *
+     * @return     uint32_t
+     */
+    virtual uint32_t filesys_get_n_available_sample_blocks(void)
+    {
+        return 0;
+    }
+
+    virtual bool start_sample_thread(void (*sample_read_cb)(void), float sample_interval_ms){return false;};
+    virtual bool stop_sample_thread(void){return false;};
+
     virtual void set_default_data_output_baudrate(){};
     virtual void set_max_data_output_baudrate(){};
 

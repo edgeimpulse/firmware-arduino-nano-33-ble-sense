@@ -52,6 +52,7 @@ namespace micro {
 #endif
 #endif
 
+// Patched by Edge Impulse, ARC GCC fixes
 namespace {
 #if defined (__GNUC__)
 static int8_t scratch_mem_x[SCRATCH_MEM_X_SIZE] __attribute__((section(".Xdata")));

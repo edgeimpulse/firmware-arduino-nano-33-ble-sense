@@ -28,14 +28,68 @@
 /* Include ----------------------------------------------------------------- */
 #include "at_base64_lib.h"
 
+static const char *base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                  "abcdefghijklmnopqrstuvwxyz"
+                                  "0123456789+/";
+
+/**
+ * @brief Base64 encode and write to a putc function
+ *
+ * @param input
+ * @param input_size
+ * @param output
+ * @param output_size
+ * @return int number of bytes in output buffer, negative if error occured
+ */
+void base64_encode(const char *input, size_t input_size, void (*putc_f)(char))
+{
+    int i = 0;
+    int j = 0;
+    unsigned char char_array_3[3];
+    unsigned char char_array_4[4];
+
+    while (input_size--) {
+        char_array_3[i++] = *(input++);
+        if (i == 3) {
+            char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
+            char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
+            char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
+            char_array_4[3] = char_array_3[2] & 0x3f;
+
+            for (i = 0; (i < 4); i++) {
+                putc_f(base64_chars[char_array_4[i]]);
+            }
+            i = 0;
+        }
+    }
+
+    if (i) {
+        for (j = i; j < 3; j++) {
+            char_array_3[j] = '\0';
+        }
+
+        char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
+        char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
+        char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
+        char_array_4[3] = char_array_3[2] & 0x3f;
+
+        for (j = 0; (j < i + 1); j++) {
+            putc_f(base64_chars[char_array_4[j]]);
+        }
+
+        while ((i++ < 3)) {
+            putc_f('=');
+        }
+    }
+}
 
 /**
  * @brief Base64 encode and write to output buffer, errors on buffer overflow
- * 
- * @param input 
- * @param input_size 
- * @param output 
- * @param output_size 
+ *
+ * @param input
+ * @param input_size
+ * @param output
+ * @param output_size
  * @return int number of bytes in output buffer, negative if error occured
  */
 int base64_encode_buffer(const char *input, size_t input_size, char *output, size_t output_size)
