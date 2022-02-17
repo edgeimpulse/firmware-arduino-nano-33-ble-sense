@@ -19,6 +19,13 @@ The arduino-cli tool is used to build and upload the Edge Impulse firmware to th
 
 The Edge Impulse firmware depends on some libraries and the Mbed core for Arduino. These will be automatically installed if you don't have them yet.
 
+* Arduino IDE (required for Windows users)
+
+_Installing Arduino IDE is a requirement only for Windows users. macOS and Linux users can use either the Arduino CLI or IDE to build the application._
+
+1. Download and install the [Arduino IDE](https://www.arduino.cc/en/software) for your Operating System.
+1. In Tools -> Board -> Boards Manager, search for `nano 33` and install the (deprecated) **Arduino Mbed OS Boards v1.1.6**.
+
 ## Building the application
 
 1. Build the application:
@@ -32,6 +39,15 @@ The Edge Impulse firmware depends on some libraries and the Mbed core for Arduin
     ```
     ./arduino-build.sh --flash
     ```
+
+### Arduino IDE
+
+1. In Tools -> Board -> Boards Manager, search for `nano 33` and install the (deprecated) ****Arduino Mbed OS Boards v1.1.6****.
+1. In Arduino Menu -> Preferences, check the location of the **preferences.txt** file (ie: /Users/aureleq/Library/Arduino15/).
+1. Copy the `boards.local.txt` file into the Arduino Mbed Nano 33 BLE Sense directory, for instance:
+`/Users/aureleq/Library/Arduino15/packages/arduino/hardware/mbed/1.1.6`.
+1. Open the `firmware-arduino-nano-33-ble-sense.ino`, select the **Arduino nRF528x Boards (Mbed OS)** > **Arduino Nano 33 BLE** board.
+1. Build and flash the application using the **Upload** button. :warning: **It can take up to an hour depending on your computer resources**
 
 ## Troubleshooting
 
