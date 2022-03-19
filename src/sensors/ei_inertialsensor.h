@@ -48,7 +48,7 @@ static const ei_device_fusion_sensor_t inertial_sensor = {
     // sampling frequencies
     { 20.0f, 62.5f, 100.0f },
     // axis name and units payload (must be same order as read in)
-    { {"accX", "m/s2"}, {"accY", "m/s2"}, {"accZ", "m/s2"}, {"gryX", "m/s2"}, {"gryY", "m/s2"}, {"gryZ", "m/s2"}, {"magX", "uT"}, {"magY", "uT"}, {"magZ", "uT"} }, 
+    { {"accX", "m/s2"}, {"accY", "m/s2"}, {"accZ", "m/s2"}, {"gyrX", "m/s2"}, {"gyrY", "m/s2"}, {"gyrZ", "m/s2"}, {"magX", "uT"}, {"magY", "uT"}, {"magZ", "uT"} },
     // reference to read data function
     &ei_fusion_inertial_read_data
 };
