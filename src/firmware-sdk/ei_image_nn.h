@@ -27,6 +27,28 @@
 #include "firmware-sdk/ei_device_interface.h"
 #include "edge-impulse-sdk/classifier/ei_run_classifier.h"
 #include "firmware-sdk/at_base64_lib.h"
+#include "firmware-sdk/jpeg/encode_as_jpg.h"
+
+static void respond_and_change_to_max_baud()
+{
+    auto device = EiDeviceInfo::get_device();
+    // sleep a little to let the daemon attach on the new baud rate...
+    ei_printf("\r\nOK");
+    ei_sleep(100);
+    device->set_max_data_output_baudrate();
+    ei_sleep(100);
+}
+
+static void change_to_normal_baud()
+{
+    auto device = EiDeviceInfo::get_device();
+    // lower baud rate
+    ei_printf("\r\nOK\r\n");
+    ei_sleep(100);
+    device->set_default_data_output_baudrate();
+    // sleep a little to let the daemon attach on baud rate 115200 again...
+    ei_sleep(100);
+}
 
 class EiImageNN {
 public:
@@ -46,7 +68,7 @@ public:
     {
     }
 
-    void run_nn(bool debug);
+    void run_nn(bool debug, int delay_ms, bool use_max_baudrate);
     int cutout_get_data(uint32_t offset, uint32_t length, float *out_ptr);
 
 private:
@@ -84,7 +106,7 @@ int EiImageNN::cutout_get_data(uint32_t offset, uint32_t length, float *out_ptr)
     return 0;
 }
 
-void EiImageNN::run_nn(bool debug)
+void EiImageNN::run_nn(bool debug, int delay_ms, bool use_max_baudrate)
 {
     // summary of inferencing settings (from model_metadata.h)
     ei_printf("Inferencing settings:\n");
@@ -96,6 +118,10 @@ void EiImageNN::run_nn(bool debug)
     if (!camera->init()) {
         ei_printf("ERR: Failed to initialize image sensor\r\n");
         return;
+    }
+
+    if (use_max_baudrate) {
+        respond_and_change_to_max_baud();
     }
 
     while (!ei_user_invoke_stop_lib()) {
@@ -116,49 +142,96 @@ void EiImageNN::run_nn(bool debug)
             break;
         }
 
-        if(debug) {
-            ei_printf("Framebuffer: \r\n");
-            base64_encode((char*)image, image_size, ei_putc);
-            ei_printf("\r\n");
-        }
-
         // run the impulse: DSP, neural network and the Anomaly algorithm
         ei_impulse_result_t result = { 0 };
 
-        EI_IMPULSE_ERROR ei_error = run_classifier(&signal, &result, debug);
+        EI_IMPULSE_ERROR ei_error = run_classifier(&signal, &result, false);
         if (ei_error != EI_IMPULSE_OK) {
             ei_printf("Failed to run impulse (%d)\n", ei_error);
             break;
         }
 
+
+        // Print framebuffer as JPG during debugging
+        if(debug) {
+            ei_printf("Begin output\n");
+
+            size_t jpeg_buffer_size = EI_CLASSIFIER_INPUT_WIDTH * EI_CLASSIFIER_INPUT_HEIGHT >= 128 * 128 ?
+                8192 * 3 :
+                4096 * 4;
+            uint8_t *jpeg_buffer = NULL;
+            jpeg_buffer = (uint8_t*)ei_malloc(jpeg_buffer_size);
+            if (!jpeg_buffer) {
+                ei_printf("ERR: Failed to allocate JPG buffer\r\n");
+                return;
+            }
+
+            size_t out_size;
+            int x = encode_rgb888_signal_as_jpg(&signal, EI_CLASSIFIER_INPUT_WIDTH, EI_CLASSIFIER_INPUT_HEIGHT, jpeg_buffer, jpeg_buffer_size, &out_size);
+            if (x != 0) {
+                ei_printf("Failed to encode frame as JPEG (%d)\n", x);
+                break;
+            }
+
+            ei_printf("Framebuffer: ");
+            base64_encode((char*)jpeg_buffer, out_size, ei_putc);
+            ei_printf("\r\n");
+
+            if (jpeg_buffer) {
+                ei_free(jpeg_buffer);
+            }
+        }
+
         // print the predictions
-        ei_printf(
-            "Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
-            result.timing.dsp,
-            result.timing.classification,
-            result.timing.anomaly);
-        for (size_t ix = 0; ix < classifier_label_count; ix++) {
-            ei_printf(
-                "    %s: \t%f\r\n",
-                result.classification[ix].label,
-                result.classification[ix].value);
+        ei_printf("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
+                  result.timing.dsp, result.timing.classification, result.timing.anomaly);
+#if EI_CLASSIFIER_OBJECT_DETECTION == 1
+        bool bb_found = result.bounding_boxes[0].value > 0;
+        for (size_t ix = 0; ix < EI_CLASSIFIER_OBJECT_DETECTION_COUNT; ix++) {
+            auto bb = result.bounding_boxes[ix];
+            if (bb.value == 0) {
+                continue;
+            }
+
+            ei_printf("    %s (%f) [ x: %u, y: %u, width: %u, height: %u ]\n", bb.label, bb.value, bb.x, bb.y, bb.width, bb.height);
+        }
+
+        if (!bb_found) {
+            ei_printf("    No objects found\n");
+        }
+#else
+        for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
+            ei_printf("    %s: %.5f\n", result.classification[ix].label,
+                                        result.classification[ix].value);
         }
 #if EI_CLASSIFIER_HAS_ANOMALY == 1
-        ei_printf("    anomaly score: %f\r\n", result.anomaly);
+        ei_printf("    anomaly score: %.3f\n", result.anomaly);
+#endif
 #endif
 
-        ei_printf("Starting inferencing in 2 seconds...\n");
+        if (debug) {
+            ei_printf("End output\n");
+        }
+
+
+        if (delay_ms != 0) {
+            ei_printf("Starting inferencing in %d seconds...\n", delay_ms / 1000);
+        }
 
         // instead of wait_ms, we'll wait on the signal, this allows threads to cancel us...
-        uint64_t end_ms = ei_read_timer_ms() + 2000;
+        uint64_t end_ms = ei_read_timer_ms() + delay_ms;
         while (end_ms > ei_read_timer_ms()) {
             if (ei_user_invoke_stop_lib()) {
                 ei_printf("Inferencing stopped by user\r\n");
                 goto CLOSE_AND_EXIT;
             }
-        };
+        }
     }
 CLOSE_AND_EXIT:
+
+    if (use_max_baudrate) {
+        change_to_normal_baud();
+    }
     camera->deinit();
 }
 

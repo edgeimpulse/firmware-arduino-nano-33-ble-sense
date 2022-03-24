@@ -115,6 +115,7 @@ void ei_main() {
 
     ei_at_register_generic_cmds();
     ei_at_cmd_register("RUNIMPULSE", "Run the impulse", run_nn_normal);
+    ei_at_cmd_register("RUNIMPULSEDEBUG=", "Run the impulse with extra (base64) debug output (USEMAXRATE?(y/n))", run_nn_debug);
     ei_at_cmd_register("RUNIMPULSECONT", "Run the impulse continuously", run_nn_continuous_normal);
 
     repl.start_repl();

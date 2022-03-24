@@ -24,8 +24,6 @@ else
 fi
 
 rm -rf $SCRIPTPATH/tensorflow/lite/micro/mbed/
-rm -rf $SCRIPTPATH/porting/ecm3532/
-rm -rf $SCRIPTPATH/porting/himax/
 rm -rf $SCRIPTPATH/porting/mbed/
 rm -rf $SCRIPTPATH/porting/mingw32/
 rm -rf $SCRIPTPATH/porting/posix/

@@ -340,7 +340,7 @@ __attribute__((unused)) int extract_mfcc_features(signal_t *signal, matrix_t *ou
         EIDSP_ERR(EIDSP_MATRIX_SIZE_MISMATCH);
     }
 
-    if(config.implementation_version != 1 && config.implementation_version != 2) {
+    if((config.implementation_version == 0) || (config.implementation_version > 3)) {
         EIDSP_ERR(EIDSP_BLOCK_VERSION_INCORRECT);
     }
 
@@ -449,7 +449,7 @@ __attribute__((unused)) int extract_mfcc_per_slice_features(signal_t *signal, ma
         EIDSP_ERR(EIDSP_MATRIX_SIZE_MISMATCH);
     }
 
-    if(config.implementation_version != 1 && config.implementation_version != 2) {
+    if((config.implementation_version == 0) || (config.implementation_version > 3)) {
         EIDSP_ERR(EIDSP_BLOCK_VERSION_INCORRECT);
     }
 

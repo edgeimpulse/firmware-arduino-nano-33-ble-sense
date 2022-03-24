@@ -23,10 +23,8 @@
 // set to 1 to generate and send a test image
 #define SEND_TEST_IMAGE 0
 
-#if !SEND_TEST_IMAGE
 #include "firmware-sdk/ei_camera_interface.h"
 #include "firmware-sdk/ei_device_info_lib.h"
-#endif
 
 #if EI_PORTING_SONY_SPRESENSE
 #include "malloc.h" //for memalign

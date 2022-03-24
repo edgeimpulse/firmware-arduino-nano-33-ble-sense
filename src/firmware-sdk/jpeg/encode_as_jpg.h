@@ -77,7 +77,7 @@ int encode_bw_signal_as_jpg(signal_t *signal, int width, int height, uint8_t *ou
         rc = JPEG_MEM_ERROR;
         goto cleanup;
     }
-    encode_buffer_u8 = (uint8_t*)malloc(buf_len);
+    encode_buffer_u8 = (uint8_t*)malloc(buf_len * bytePp);
     if (!encode_buffer_u8) {
         rc = JPEG_MEM_ERROR;
         goto cleanup;
@@ -88,7 +88,9 @@ int encode_bw_signal_as_jpg(signal_t *signal, int width, int height, uint8_t *ou
         // the JPEGENCODE structure is updated by addMCU() after
         // each call
 
-        int offset = (jpe.x * bytePp) + (jpe.y * pitch);
+        // pixel offset
+        int offset = jpe.x  + (jpe.y * width);
+
         rc = signal->get_data(offset, buf_len, encode_buffer);
         if (rc != 0) {
             goto cleanup;
@@ -110,15 +112,198 @@ int encode_bw_signal_as_jpg(signal_t *signal, int width, int height, uint8_t *ou
         last_offset = offset;
     }
 
-    printf("Max_offset_diff %d\n", max_offset_diff);
+    //ei_printf("Max_offset_diff %d\n", max_offset_diff);
 
     rc = JPEG_SUCCESS;
 
 cleanup:
     *out_size = jpg.close();
 
-    free(encode_buffer);
-    free(encode_buffer_u8);
+    ei_free(encode_buffer);
+    ei_free(encode_buffer_u8);
+
+    return rc;
+}
+
+int encode_rgb888_signal_as_jpg(signal_t *signal, int width, int height, uint8_t *out_buffer, size_t out_buffer_size, size_t *out_size) {
+    static JPEGClass jpg;
+    JPEGENCODE jpe;
+    float *encode_buffer = NULL;
+    uint8_t *encode_buffer_u8 = NULL;
+
+    int rc = jpg.open(out_buffer, out_buffer_size);
+    if (rc != JPEG_SUCCESS) {
+        return rc;
+    }
+
+    rc = jpg.encodeBegin(&jpe, width, height, JPEG_PIXEL_RGB888, JPEG_SUBSAMPLE_444, JPEG_Q_BEST);
+    if (rc != JPEG_SUCCESS) {
+        return rc;
+    }
+
+    int imcu_count = ((width + jpe.cx-1)/ jpe.cx) * ((height + jpe.cy-1) / jpe.cy);
+
+    int bytePp = 3;
+    int pitch = bytePp * width;
+
+    // We read through the signal paged...
+    int buf_len = width * 8;
+
+    int last_offset = 0;
+    int max_offset_diff = 0;
+
+    // encode_buffer in 4 BPP (float32)
+    encode_buffer = (float*)malloc(buf_len * 4);
+    if (!encode_buffer) {
+        rc = JPEG_MEM_ERROR;
+        goto cleanup;
+    }
+    //encode_buffer_u8 in 3 BPP
+    encode_buffer_u8 = (uint8_t*)malloc(buf_len * bytePp);
+    if (!encode_buffer_u8) {
+        rc = JPEG_MEM_ERROR;
+        goto cleanup;
+    }
+
+    for (int i = 0; i < imcu_count; i++) {
+        // pass a pointer to the upper left corner of each MCU
+        // the JPEGENCODE structure is updated by addMCU() after
+        // each call
+
+        // pixel offset
+        int offset = jpe.x  + (jpe.y * width);
+
+        rc = signal->get_data(offset, buf_len, encode_buffer);
+        if (rc != 0) {
+            goto cleanup;
+        }
+
+        for (size_t ix = 0; ix < buf_len; ix++) {
+            uint32_t pixel = static_cast<uint32_t>(encode_buffer[ix]);
+            // pixel pointer to byte pointer
+            size_t out_pix_ptr = ix * bytePp;
+
+            // jpeg library expects BGR (LE)
+            encode_buffer_u8[out_pix_ptr + 2] = pixel >> 16 & 0xff;  // r
+            encode_buffer_u8[out_pix_ptr + 1] = pixel >> 8  & 0xff;  // g
+            encode_buffer_u8[out_pix_ptr + 0] = pixel       & 0xff;  // b
+        }
+
+        rc = jpg.addMCU(&jpe, encode_buffer_u8, pitch);
+
+        if (rc != JPEG_SUCCESS) {
+            goto cleanup;
+        }
+
+        if (offset - last_offset > max_offset_diff) {
+            max_offset_diff = offset - last_offset;
+        }
+
+        last_offset = offset;
+    }
+
+    //ei_printf("Max_offset_diff %d\n", max_offset_diff);
+
+    rc = JPEG_SUCCESS;
+
+cleanup:
+    *out_size = jpg.close();
+
+    ei_free(encode_buffer);
+    ei_free(encode_buffer_u8);
+
+    return rc;
+}
+
+int encode_rgb565_signal_as_jpg(signal_t *signal, int width, int height, uint8_t *out_buffer, size_t out_buffer_size, size_t *out_size) {
+    static JPEGClass jpg;
+    JPEGENCODE jpe;
+    float *encode_buffer = NULL;
+    uint8_t *encode_buffer_u8 = NULL;
+
+    int rc = jpg.open(out_buffer, out_buffer_size);
+    if (rc != JPEG_SUCCESS) {
+        return rc;
+    }
+
+    rc = jpg.encodeBegin(&jpe, width, height, JPEG_PIXEL_RGB565, JPEG_SUBSAMPLE_444, JPEG_Q_BEST);
+    if (rc != JPEG_SUCCESS) {
+        return rc;
+    }
+
+    int imcu_count = ((width + jpe.cx-1)/ jpe.cx) * ((height + jpe.cy-1) / jpe.cy);
+
+    int bytePp = 2;
+    int pitch = bytePp * width;
+
+    // We read through the signal paged...
+    int buf_len = width * 8;
+
+    int last_offset = 0;
+    int max_offset_diff = 0;
+
+    // encode_buffer in 4 BPP (float32)
+    encode_buffer = (float*)malloc(buf_len * 4);
+    if (!encode_buffer) {
+        rc = JPEG_MEM_ERROR;
+        goto cleanup;
+    }
+    //encode_buffer_u8 in 2 BPP
+    encode_buffer_u8 = (uint8_t*)malloc(buf_len * bytePp);
+    if (!encode_buffer_u8) {
+        rc = JPEG_MEM_ERROR;
+        goto cleanup;
+    }
+
+    for (int i = 0; i < imcu_count; i++) {
+        // pass a pointer to the upper left corner of each MCU
+        // the JPEGENCODE structure is updated by addMCU() after
+        // each call
+
+        // pixel offset
+        int offset = jpe.x  + (jpe.y * width);
+
+        rc = signal->get_data(offset, buf_len, encode_buffer);
+        if (rc != 0) {
+            goto cleanup;
+        }
+
+        for (size_t ix = 0; ix < buf_len; ix++) {
+            uint32_t pixel = static_cast<uint32_t>(encode_buffer[ix]);
+            // pixel pointer to byte pointer
+            size_t out_pix_ptr = ix * bytePp;
+
+            uint8_t r, g, b;
+            r = (pixel >> 19) & 0x1f;
+            g = (pixel >> 10) & 0x3f;
+            b = (pixel >>  3) & 0x1f;
+
+            encode_buffer_u8[out_pix_ptr + 1] = (r << 3) | ((g >> 3) & 0x7);
+            encode_buffer_u8[out_pix_ptr + 0] = ((g & 0x7) << 5) | b ;
+        }
+
+        rc = jpg.addMCU(&jpe, encode_buffer_u8, pitch);
+
+        if (rc != JPEG_SUCCESS) {
+            goto cleanup;
+        }
+
+        if (offset - last_offset > max_offset_diff) {
+            max_offset_diff = offset - last_offset;
+        }
+
+        last_offset = offset;
+    }
+
+    //ei_printf("Max_offset_diff %d\n", max_offset_diff);
+
+    rc = JPEG_SUCCESS;
+
+cleanup:
+    *out_size = jpg.close();
+
+    ei_free(encode_buffer);
+    ei_free(encode_buffer_u8);
 
     return rc;
 }

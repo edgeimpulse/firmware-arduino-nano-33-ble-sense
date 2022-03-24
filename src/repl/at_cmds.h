@@ -26,12 +26,13 @@
 #include "at_cmd_interface.h"
 #include "at_base64_lib.h"
 #include "ei_config.h"
+#include "model-parameters/model_metadata.h"
 
 #include "ei_device_nano_ble33.h"
 #include "ei_camera.h"
 #include "ei_fusion.h"
 
-#define EDGE_IMPULSE_AT_COMMAND_VERSION        "1.6.0"
+#define EDGE_IMPULSE_AT_COMMAND_VERSION        "1.7.0"
 
 static void at_error_not_implemented() {
     ei_printf("Command not implemented\r\n");
@@ -59,6 +60,19 @@ static void at_device_info() {
         ei_printf("Type:       %s\n", id_buffer);
     }
     ei_printf("AT Version: %s\n", EDGE_IMPULSE_AT_COMMAND_VERSION);
+}
+
+static void at_get_inference() {
+    ei_printf("Sensor:           %d\r\n", EI_CLASSIFIER_SENSOR);
+
+#if EI_CLASSIFIER_OBJECT_DETECTION_CONSTRAINED == 1
+        const char *model_type = "constrained_object_detection";
+#elif EI_CLASSIFIER_OBJECT_DETECTION
+        const char *model_type = "object_detection";
+#else
+        const char *model_type = "classification";
+#endif
+    ei_printf("Model type:       %s\r\n", model_type);
 }
 
 static void at_get_wifi() {
@@ -310,6 +324,9 @@ static void at_list_config() {
     if (ei_has_camera()) {
         ei_printf("===== Snapshot ======\n");
         at_get_snapshot();
+        ei_printf("\n");
+        ei_printf("===== Inference ======\n");
+        at_get_inference();
         ei_printf("\n");
     }
     ei_printf("===== WIFI =====\n");

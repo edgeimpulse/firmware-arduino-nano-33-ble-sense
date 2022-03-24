@@ -434,3 +434,14 @@ static bool get_wifi_present_status_c(void)
 {
     return false;
 }
+
+/**
+ * @brief      Put char from UART
+ *
+ * @param[in] send_char Character to be sent over UART
+ *
+ */
+void ei_putchar(char c)
+{
+    Serial.write(c);
+}

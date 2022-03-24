@@ -1,5 +1,5 @@
-/* Edge Impulse inferencing library
- * Copyright (c) 2020 EdgeImpulse Inc.
+/* Edge Impulse 
+ * Copyright (c) 2022 EdgeImpulse Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,29 +19,27 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#ifndef EI_LSM9DS1_H
+#define EI_LSM9DS1_H
 
-#ifndef __EI_DEVICE_INTERFACE__H__
-#define __EI_DEVICE_INTERFACE__H__
+/* Include ----------------------------------------------------------------- */
+#include <Arduino_LSM9DS1.h>
 
+/* Class ----------------------------------------------------- */
+class ei_LSM9DS1Class: public LSM9DS1Class
+{
+    public:
+        ei_LSM9DS1Class(TwoWire& wire);
+        int ei_begin(void);
+        int readAcceleration(float& x, float& y, float& z); // overloading arduino basic read due to different range setting
 
-// also grab everything for classifying
-#include "edge-impulse-sdk/porting/ei_classifier_porting.h"
+    private:
+        int writeRegister(uint8_t slaveAddress, uint8_t address, uint8_t value);
+        int readRegister(uint8_t slaveAddress, uint8_t address);
+        int readRegisters(uint8_t slaveAddress, uint8_t address, uint8_t* data, size_t length);
+    private:
+        TwoWire* _wire;
+};
 
-/* Function prototypes ----------------------------------------------------- */
-//TODO: remove as it is device specific and wil be superseded by AT Server
-void ei_command_line_handle(void);
-//TODO: redeclared in ei_device_lib.h
-bool ei_user_invoke_stop_lib(void);
-//TODO: do we need it in the FW SDK?
-void ei_serial_setup(void);
-
-//TODO: remove as it is device specific
-void ei_write_string(char *data, int length);
-
-//TODO: move to a one header with all method requied by FW SDK
-void ei_putc(char cChar);
-//TODO: move to a one header with all method requied by FW SDK
-char ei_getchar();
-
-
-#endif  //!__EI_DEVICE_INTERFACE__H__
+extern ei_LSM9DS1Class ei_IMU;
+#endif

@@ -1,8 +1,27 @@
 #!/bin/bash
 set -e
 
+################################ Project ######################################
+
 PROJECT=firmware-arduino-nano-33-ble-sense
-BOARD=arduino:mbed:nano33ble
+
+# used for grepping
+ARDUINO_CORE="arduino:mbed"
+ARDUINO_CORE_VERSION="1.1.6"
+
+BOARD="${ARDUINO_CORE}":nano33ble
+
+# declare associative array pre bash 4 style
+ARDUINO_LIBS=(
+"Arduino_LSM9DS1=1.0.0"   # Inertial sensor library
+"Arduino_HTS221=1.0.0"    # Environment sensor library
+"Arduino_LPS22HB=1.0.0"   # Pressure sensor library
+"Arduino_APDS9960=1.0.3"  # Interaction sensor library
+"Arduino_OV767X=0.0.2"    # Camera sensor library
+)
+
+###############################################################################
+
 COMMAND=$1
 if [ -z "$ARDUINO_CLI" ]; then
     ARDUINO_CLI=$(which arduino-cli || true)
@@ -11,80 +30,131 @@ DIRNAME="$(basename "$SCRIPTPATH")"
 EXPECTED_CLI_MAJOR=0
 EXPECTED_CLI_MINOR=18
 
-if [ ! -x "$ARDUINO_CLI" ]; then
-    echo "Cannot find 'arduino-cli' in your PATH. Install the Arduino CLI before you continue."
-    echo "Installation instructions: https://arduino.github.io/arduino-cli/latest/"
-    exit 1
-fi
-
 CLI_MAJOR=$($ARDUINO_CLI version | cut -d. -f1 | rev | cut -d ' '  -f1)
 CLI_MINOR=$($ARDUINO_CLI version | cut -d. -f2)
 CLI_REV=$($ARDUINO_CLI version | cut -d. -f3 | cut -d ' '  -f1)
 
-if (( CLI_MINOR < EXPECTED_CLI_MINOR)); then
-    echo "You need to upgrade your Arduino CLI version (now: $CLI_MAJOR.$CLI_MINOR.$CLI_REV, but required: $EXPECTED_CLI_MAJOR.$EXPECTED_CLI_MINOR.x or higher)"
-    echo "See https://arduino.github.io/arduino-cli/installation/ for upgrade instructions"
-    exit 1
-fi
+################################ Helper Funcs #################################
 
-if (( CLI_MAJOR != EXPECTED_CLI_MAJOR || CLI_MINOR != EXPECTED_CLI_MINOR )); then
-    echo "You're using an untested version of Arduino CLI, this might cause issues (found: $CLI_MAJOR.$CLI_MINOR.$CLI_REV, expected: $EXPECTED_CLI_MAJOR.$EXPECTED_CLI_MINOR.x)"
-fi
-
-echo "Installing dependencies..."
-$ARDUINO_CLI core update-index
-
-echo "Installing Arduino Mbed core..."
-$ARDUINO_CLI core install arduino:mbed@1.1.6
-echo "Installing Arduino Mbed core OK"
-
-echo "Installing LSM9DS1 library..."
-$ARDUINO_CLI lib install Arduino_LSM9DS1@1.0.0  #Inertial sensor library
-echo "Installing LSM9DS1 library OK"
-
-has_hts221_lib() {
-    $ARDUINO_CLI lib list | grep Arduino_HTS221 || true
+# parses Arduino CLI's (core list and lib list) output and returns the installed version.
+# Expected format (spaces can vary):
+#    <package/core>   <installed version>  <latest version>  <other>
+#
+parse_installed() {
+    echo "${1}" | awk -F " " '{print $2}' || true
 }
-HAS_HTS221_LIB="$(has_hts221_lib)"
-if [ -z "$HAS_HTS221_LIB" ]; then
-    echo "Installing HTS221 library..."
-    $ARDUINO_CLI lib update-index
-    $ARDUINO_CLI lib install Arduino_HTS221@1.0.0	#Environment sensor library
-    echo "Installing HTS221 library OK"
-fi
 
-has_lps22hb_lib() {
-	$ARDUINO_CLI lib list | grep Arduino_LPS22HB || true
+# finds a Arduino core installed and returns the version
+# otherwise it returns empty string
+#
+find_arduino_core() {
+    core=$1
+    version=$2
+    result=""
+    # space intentional
+    line="$($ARDUINO_CLI core list | grep "${core} " || true)"
+    if [ -n "$line" ]; then
+        installed="$(parse_installed "${line}")"
+        if [ "$version" = "$installed" ]; then
+           result="$installed"
+        fi
+    fi
+    echo $result
 }
-HAS_LPS22HB_LIB="$(has_lps22hb_lib)"
-if [ -z "$HAS_LPS22HB_LIB" ]; then
-    echo "Installing LPS22HB library..."
-    $ARDUINO_CLI lib update-index
-    $ARDUINO_CLI lib install Arduino_LPS22HB@1.0.0	#Pressure sensor library
-    echo "Installing LPS22HB library OK"
-fi
 
-has_apds9960_lib() {
-	$ARDUINO_CLI lib list | grep Arduino_APDS9960 || true
+# finds a Arduino library installed and returns the version
+# otherwise it returns empty string
+#
+find_arduino_lib() {
+    lib=$1
+    version=$2
+    result=""
+    # space intentional
+    line="$($ARDUINO_CLI lib list | grep "${lib} " || true)"
+    if [ -n "$line" ]; then
+        installed="$(parse_installed "${line}")"
+        if [ "$version" = "$installed" ]; then
+           result="$installed"
+        fi
+    fi
+    echo $result
 }
-HAS_APDS9960_LIB="$(has_apds9960_lib)"
-if [ -z "$HAS_APDS9960_LIB" ]; then
-    echo "Installing APDS9960 library..."
-    $ARDUINO_CLI lib update-index
-    $ARDUINO_CLI lib install Arduino_APDS9960@1.0.3	#Interaction sensor library
-    echo "Installing APDS9960 library OK"
-fi
 
-has_ov767x_lib() {
-    $ARDUINO_CLI lib list | grep Arduino_OV767X || true
+array_get_key() {
+    echo "${1%%=*}"
 }
-HAS_OV767X_LIB="$(has_ov767x_lib)"
-if [ -z "$HAS_OV767X_LIB" ]; then
-    echo "Installing OV767X library..."
-    $ARDUINO_CLI lib update-index
-    $ARDUINO_CLI lib install Arduino_OV767X@0.0.2	#Camera sensor library
-    echo "Installing OV767X library OK"
-fi
+
+array_get_value() {
+    echo "${1#*=}"
+}
+
+############################# Installing Deps #################################
+
+check_dependency()
+{
+    if [ ! -x "$ARDUINO_CLI" ]; then
+        echo "Cannot find 'arduino-cli' in your PATH. Install the Arduino CLI before you continue."
+        echo "Installation instructions: https://arduino.github.io/arduino-cli/latest/"
+        exit 1
+    fi
+
+    if (( CLI_MINOR < EXPECTED_CLI_MINOR)); then
+        echo "You need to upgrade your Arduino CLI version (now: $CLI_MAJOR.$CLI_MINOR.$CLI_REV, but required: $EXPECTED_CLI_MAJOR.$EXPECTED_CLI_MINOR.x or higher)"
+        echo "See https://arduino.github.io/arduino-cli/installation/ for upgrade instructions"
+        exit 1
+    fi
+
+    if (( CLI_MAJOR != EXPECTED_CLI_MAJOR || CLI_MINOR != EXPECTED_CLI_MINOR )); then
+        echo "You're using an untested version of Arduino CLI, this might cause issues (found: $CLI_MAJOR.$CLI_MINOR.$CLI_REV, expected: $EXPECTED_CLI_MAJOR.$EXPECTED_CLI_MINOR.x)"
+    fi
+
+    echo ""
+    echo "Checking Core dependencies..."
+    echo ""
+
+    has_arduino_core="$(find_arduino_core "${ARDUINO_CORE}" "${ARDUINO_CORE_VERSION}")"
+    if [ -z "$has_arduino_core" ]; then
+        echo -e "${ARDUINO_CORE}@${ARDUINO_CORE_VERSION}\tNot Found!"
+        echo -e "\tInstalling ${ARDUINO_CORE}@${ARDUINO_CORE_VERSION}..."
+        $ARDUINO_CLI core update-index
+        $ARDUINO_CLI core install "${ARDUINO_CORE}@${ARDUINO_CORE_VERSION}"
+        echo -e "\tInstalling ${ARDUINO_CORE}@${ARDUINO_CORE_VERSION} OK"
+    else
+        echo -e "${ARDUINO_CORE}@${ARDUINO_CORE_VERSION}\tFound!"
+    fi
+
+    echo ""
+    echo "Checking Core dependencies OK"
+    echo ""
+    echo "Checking Library dependencies..."
+    echo ""
+
+    lib_update=""
+    for lib in ${ARDUINO_LIBS[@]}; do
+        key=$(array_get_key "${lib}")
+        value=$(array_get_value "$lib")
+        has_arduino_lib="$(find_arduino_lib "${key}" "${value}")"
+        if [ -n "$has_arduino_lib" ]; then
+            echo -e "${key}@${value}\tFound!"
+        else
+            echo -e "${key}@${value}\tNot Found!"
+            echo -e "\tInstalling ${key}@${value} library..."
+
+        if [ -z  "$lib_update" ]; then
+            $ARDUINO_CLI lib update-index
+            lib_update="once"
+        fi
+            $ARDUINO_CLI lib install "${key}"@"${value}"
+            echo -e "\tInstalling ${key}@${value} library OK"
+        fi
+    done
+
+    echo ""
+    echo "Checking Library dependencies OK"
+    echo ""
+}
+
+############################### Build Deps #####################################
 
 # CLI v0.14 updates the name of this to --build-property
 if ((CLI_MAJOR >= 0 && CLI_MINOR >= 14)); then
@@ -119,6 +189,7 @@ FLAGS+=" -mfpu=fpv4-sp-d16"
 if [ "$COMMAND" = "--build" ];
 then
     echo "Building $PROJECT"
+    check_dependency
     $ARDUINO_CLI compile --fqbn  $BOARD $BUILD_PROPERTIES_FLAG build.extra_flags="$INCLUDE $FLAGS" --output-dir . &
     pid=$! # Process Id of the previous running command
     while kill -0 $pid 2>/dev/null

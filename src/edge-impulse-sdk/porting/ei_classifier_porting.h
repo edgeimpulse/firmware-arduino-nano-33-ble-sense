@@ -157,6 +157,14 @@ void ei_free(void *ptr);
 #endif
 #endif
 
+#ifndef EI_PORTING_RASPBERRY
+#ifdef PICO_BOARD 
+#define EI_PORTING_RASPBERRY      1
+#else
+#define EI_PORTING_RASPBERRY      0
+#endif
+#endif
+
 #ifndef EI_PORTING_ZEPHYR
 #if defined(__ZEPHYR__)
 #define EI_PORTING_ZEPHYR      1

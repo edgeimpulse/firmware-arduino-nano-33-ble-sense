@@ -1551,9 +1551,9 @@ void JPEGSample16(unsigned char *pSrc, signed char *pMCU, int lsize, int cx, int
         for (x=0; x<cx; x++) // do 8x8 pixels
         {
             us = *pUS++;
-            cBlue = (unsigned char)(((us & 0x1f)<<3) | (us & 7));
-            cGreen = (unsigned char)(((us & 0x7e0)>>3) | ((us & 0x60)>>5));
-            cRed = (unsigned char)(((us & 0xf800)>>8) | ((us & 0x3800)>>11));
+            cBlue = (unsigned char)(((us & 0x1f)<<3));
+            cGreen = (unsigned char)(((us & 0x7e0)>> 5) << 2);
+            cRed = (unsigned char)(((us & 0xf800)>>11) << 3);
             iY = (((cRed * 1225) + (cGreen * 2404) + (cBlue * 467)) >> 12) - 0x80;
             iCb = (cBlue << 11) + (cRed * -691) + (cGreen * -1357);
             iCr = (cRed << 11) + (cGreen * -1715) + (cBlue * -333);

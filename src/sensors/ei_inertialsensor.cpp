@@ -30,7 +30,7 @@
 #include "nano_fs_commands.h"
 #include "sensor_aq.h"
 
-#include <Arduino_LSM9DS1.h>
+#include "ei_lsm9ds1.h"
 #include "mbed.h"
 
 #include "ei_device_nano_ble33.h"
@@ -58,11 +58,11 @@ static float imu_data[INERTIAL_AXIS_SAMPLED];
 
 bool ei_inertial_init(void)
 {
-	if (!IMU.begin()) {
-		ei_printf("Failed to initialize IMU!\r\n");
+	if (!ei_IMU.ei_begin()) {
+        ei_printf("Failed to initialize ei_IMU!\r\n");
 	}
 	else {
-		ei_printf("IMU initialized\r\n");
+        ei_printf("ei_IMU initialized\r\n");
     }
 
     ei_add_sensor_to_fusion_list(inertial_sensor);
@@ -70,8 +70,8 @@ bool ei_inertial_init(void)
 
 void ei_inertial_read_data(void)
 {
-    if (IMU.accelerationAvailable()) {
-        IMU.readAcceleration(acc_data[0], acc_data[1], acc_data[2]);
+    if (ei_IMU.accelerationAvailable()) {
+        ei_IMU.readAcceleration(acc_data[0], acc_data[1], acc_data[2]);
 
         acc_data[0] *= CONVERT_G_TO_MS2;
         acc_data[1] *= CONVERT_G_TO_MS2;
@@ -125,20 +125,20 @@ bool ei_inertial_setup_data_sampling(void)
 
 float *ei_fusion_inertial_read_data(int n_samples)
 {
-    if (IMU.accelerationAvailable()) {
-        IMU.readAcceleration(imu_data[0], imu_data[1], imu_data[2]);
+    if (ei_IMU.accelerationAvailable()) {
+        ei_IMU.readAcceleration(imu_data[0], imu_data[1], imu_data[2]);
 
         imu_data[0] *= CONVERT_G_TO_MS2;
         imu_data[1] *= CONVERT_G_TO_MS2;
         imu_data[2] *= CONVERT_G_TO_MS2;
     }
 
-    if (n_samples > 3 && IMU.gyroscopeAvailable()) {
-        IMU.readGyroscope(imu_data[3], imu_data[4], imu_data[5]);
+    if (n_samples > 3 && ei_IMU.gyroscopeAvailable()) {
+        ei_IMU.readGyroscope(imu_data[3], imu_data[4], imu_data[5]);
     }
 
-    if (n_samples > 6 && IMU.magneticFieldAvailable()) {
-        IMU.readMagneticField(imu_data[6], imu_data[7], imu_data[8]);
+    if (n_samples > 6 && ei_IMU.magneticFieldAvailable()) {
+        ei_IMU.readMagneticField(imu_data[6], imu_data[7], imu_data[8]);
     }
 
     return imu_data;
