@@ -34,4 +34,12 @@ typedef struct {
     size_t axes_size;
 } ei_model_dsp_t;
 
+typedef struct {
+    uint16_t implementation_version;
+    uint32_t average_window_duration_ms;
+    float detection_threshold;
+    uint32_t suppression_ms;
+    uint32_t suppression_flags;
+} ei_model_performance_calibration_t;
+
 #endif // _EDGE_IMPULSE_MODEL_TYPES_H_

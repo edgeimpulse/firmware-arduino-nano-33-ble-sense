@@ -47,6 +47,14 @@ extern bool ei_camera_start_snapshot_stream_encode_and_output(size_t width, size
 extern void ei_printf(const char *format, ...);
 
 /**
+ * @brief Get the list of supported resolutions
+ * 
+ * @param res pointer to pointer where the list of resolutions will be kept
+ * @param res_num a pointer to variable where the number of resolutions will be kept
+ */
+void get_resolutions(ei_device_snapshot_resolutions_t **res, uint8_t *res_num);
+
+/**
  * @brief      Determine whether to resize and to which dimension
  *
  * @param[in]  out_width     width of output image
@@ -70,9 +78,6 @@ int calculate_resize_dimensions(uint32_t out_width, uint32_t out_height, uint32_
  * @note       This function is called by the classifier to get float RGB image data
  */
 int ei_camera_cutout_get_data(size_t offset, size_t length, float *out_ptr);
-
-/* Reference to object for external usage ---------------------------------- */
-extern EiDeviceNanoBle33 EiDevice;
 
 #include <Arduino_OV767X.h>
 class OV7675 : public OV767X {

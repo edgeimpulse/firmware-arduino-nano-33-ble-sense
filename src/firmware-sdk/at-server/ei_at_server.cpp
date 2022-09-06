@@ -268,7 +268,7 @@ void ATServer::handle(char c)
                 buffer.set_position(0);
                 // ...and the line
                 ei_printf(
-                    "\r\x1b[K> %s\x1b[%luG",
+                    "\r\x1b[K> %s\x1b[%uG",
                     buffer.get_string().c_str(),
                     buffer.get_position() + 3);
             }
@@ -280,7 +280,7 @@ void ATServer::handle(char c)
                 buffer.set_position(buffer.size());
                 // ...and the line
                 ei_printf(
-                    "\r\x1b[K> %s\x1b[%luG",
+                    "\r\x1b[K> %s\x1b[%uG",
                     buffer.get_string().c_str(),
                     buffer.get_position() + 3);
             }
@@ -290,7 +290,7 @@ void ATServer::handle(char c)
                 control_sequence.at(1) == 0x33 && control_sequence.at(2) == 0x7e) {
                 if (buffer.do_delete()) {
                     ei_printf(
-                        "\r\x1b[K> %s\x1b[%luG",
+                        "\r\x1b[K> %s\x1b[%uG",
                         buffer.get_string().c_str(),
                         buffer.get_position() + 3);
                 }
@@ -331,7 +331,7 @@ void ATServer::handle(char c)
         if (buffer.do_backspace() == false) {
             break;
         }
-        ei_printf("\r\x1b[K> %s\x1b[%luG", buffer.get_string().c_str(), buffer.get_position() + 3);
+        ei_printf("\r\x1b[K> %s\x1b[%uG", buffer.get_string().c_str(), buffer.get_position() + 3);
         break;
     case 0x1b: /* control character */
         // start processing characters as they are control sequence
@@ -345,7 +345,7 @@ void ATServer::handle(char c)
                 ei_putchar(c);
             }
             else {
-                ei_printf("\r> %s\x1b[%luG", buffer.get_string().c_str(), buffer.get_position() + 3);
+                ei_printf("\r> %s\x1b[%uG", buffer.get_string().c_str(), buffer.get_position() + 3);
             }
         }
         break;

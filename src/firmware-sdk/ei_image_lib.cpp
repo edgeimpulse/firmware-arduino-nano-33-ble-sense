@@ -1,5 +1,5 @@
-/* Edge Impulse inferencing library
- * Copyright (c) 2020 EdgeImpulse Inc.
+/* Edge Impulse firmware SDK
+ * Copyright (c) 2022 EdgeImpulse Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -67,21 +67,23 @@ static bool ei_camera_take_snapshot_encode_and_output_no_init(size_t width, size
     using namespace ei::image::processing;
 
     bool needs_a_resize = false;
+
+    ei_device_snapshot_resolutions_t fb_resoluton;
+
     uint16_t final_width = width;
     uint16_t final_height = height;
 
     auto camera = EiCamera::get_camera();
-    // check for unsupported dims. clamp to 64
-    uint16_t min_width = camera->get_min_width();
-    uint16_t min_height = camera->get_min_height();
-    if (width < min_width) {
-        needs_a_resize = true;
-        width = min_width;
-    }
 
-    if (height < min_height) {
+    // check if minimum suitable sensor resolution is the same as 
+    // desired snapshot resolution
+    // if not we need to resize later
+    fb_resoluton = camera->search_resolution(width, height);
+
+    if (width != fb_resoluton.width || height != fb_resoluton.height) {
         needs_a_resize = true;
-        height = min_height;
+        width = fb_resoluton.width;
+        height = fb_resoluton.height;
     }
 
     // rgb888 packed, 3B color depth
@@ -112,7 +114,7 @@ static bool ei_camera_take_snapshot_encode_and_output_no_init(size_t width, size
         counter += 100;
     }
 #else
-    bool isOK = camera->ei_camera_capture_rgb888_packed_big_endian(image, size, width, height);
+    bool isOK = camera->ei_camera_capture_rgb888_packed_big_endian(image, size);
     if (!isOK) {
         return false;
     }
@@ -144,7 +146,11 @@ ei_camera_take_snapshot_output_on_serial(size_t width, size_t height, bool use_m
 {
     auto camera = EiCamera::get_camera();
 
-    if (!camera->init()) {
+    // sets camera sensor resolution to the best suitable 
+    // might not be the same as final snapshot resolution
+    // this is why below we pass desired snapshot resolution
+    // to ei_camera_take_snapshot_encode_and_output_no_init
+    if (!camera->init(width, height)) {
         ei_printf("Failed to init camera\n");
         return false;
     }
@@ -153,6 +159,9 @@ ei_camera_take_snapshot_output_on_serial(size_t width, size_t height, bool use_m
         respond_and_change_to_max_baud();
     }
 
+    // here we pass desired snapshot resolution 
+    // if it is different from camera sensor resolution
+    // we will resize before sending out the image
     bool isOK = ei_camera_take_snapshot_encode_and_output_no_init(width, height);
     camera->deinit();
 
@@ -172,7 +181,7 @@ extern bool ei_camera_start_snapshot_stream(size_t width, size_t height, bool us
     ei_printf("Starting snapshot stream...\n");
     auto camera = EiCamera::get_camera();
 
-    if (!camera->init()) {
+    if (!camera->init(width, height)) {
         ei_printf("Failed to init camera\n");
         return false;
     }

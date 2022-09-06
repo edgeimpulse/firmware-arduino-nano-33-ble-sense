@@ -1,4 +1,4 @@
-/* Edge Impulse ingestion SDK
+/* Edge Impulse firmware SDK
  * Copyright (c) 2020 EdgeImpulse Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,33 +21,24 @@
  */
 
 /* Include ----------------------------------------------------------------- */
+#include "ei_fusion.h"
+#include "edge-impulse-sdk/porting/ei_classifier_porting.h"
+#include "ei_device_info_lib.h"
+#include "ei_sampler.h"
+#include <iomanip>
+#include <math.h>
+#include <sstream>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include <vector>
 
-#include "ei_fusion.h"
-#include "ei_device_info_lib.h"
-#include "ei_sampler.h"
-#include "edge-impulse-sdk/porting/ei_classifier_porting.h"
+// offset for unknown header size (can be 0-3)
+#define CBOR_HEADER_OFFSET 0x02
+// number of CBOR bytes for sensor (ie {"name": "...", "units": "..."})
+#define SENSORS_BYTE_OFFSET 14
 
-/* Max fusions should fit in fusion sensor array */
-#if NUM_MAX_FUSIONS > NUM_FUSION_SENSORS
-#error "NUM_FUSION_SENSORS should be greater or equal to NUM_MAX_FUSIONS"
-#endif
-
-/*
-** @brief fixes CBOR header padding issue
-*/
-#define CBOR_HEADER_OFFSET 0x02 // offset for unknown header size (can be 0-3)
-#define SENSORS_BYTE_OFFSET                                                                        \
-    14 // number of CBOR bytes for sensor (ie {"name": "...", "units": "..."})
-
-/* Extern variables -------------------------------------------------------- */
-/** @todo Fix this when ei_config and ei_device .. modules moved to the firmware-sdk */
-extern ei_config_t *ei_config_get_config();
-extern EI_CONFIG_ERROR ei_config_set_sample_interval(float interval);
-extern EiDeviceInfo *EiDevInfo;
+using namespace std;
 
 /* Private variables ------------------------------------------------------- */
 static int payload_bytes; // counts bytes sensor fusion adds
@@ -56,13 +47,12 @@ static sampler_callback fusion_cb_sampler;
 /*
 ** @brief list of fusable sensors
 */
-static ei_device_fusion_sensor_t fusable_sensor_list[NUM_FUSION_SENSORS];
-uint8_t fus_sensor_list_ix = 0;
-
+vector<ei_device_fusion_sensor_t> fusable_sensor_list;
+vector<fused_sensors_t> fused_sensors;
 /*
 ** @brief list of sensors to fuse
 */
-static ei_device_fusion_sensor_t *fusion_sensors[NUM_FUSION_SENSORS];
+static vector<ei_device_fusion_sensor_t *> fusion_sensors;
 int num_fusions, num_fusion_axis;
 
 /* Private function prototypes --------------------------------------------- */
@@ -73,12 +63,11 @@ static void create_fusion_list(
     bool check[],
     int max_length,
     uint32_t available_bytes);
-static void print_fusion_list(int arr[], int n, int r, uint32_t ingest_memory_size);
+static void print_fusion_list(int r, uint32_t ingest_memory_size);
 static void print_all_combinations(
     int arr[],
     int data[],
     int start,
-    int end,
     int index,
     int r,
     uint32_t ingest_memory_size);
@@ -93,101 +82,9 @@ static float highest_frequency(float *frequencies, size_t size);
  */
 bool ei_add_sensor_to_fusion_list(ei_device_fusion_sensor_t sensor)
 {
-    if (fus_sensor_list_ix < NUM_FUSION_SENSORS) {
-        fusable_sensor_list[fus_sensor_list_ix++] = sensor;
-        return true;
-    }
-    else {
-        return false;
-    }
-}
+    fusable_sensor_list.push_back(sensor);
 
-/**
- * @brief   Builds list of possible sensor combinations from fusable_sensor_list
- */
-void ei_built_sensor_fusion_list(void)
-{
-    /* Calculate number of bytes available on flash for sampling, reserve 1 block for header + overhead */
-    uint32_t available_bytes = (EiDevInfo->filesys_get_n_available_sample_blocks() - 1) *
-        EiDevInfo->filesys_get_block_size();
-
-    int arr[NUM_FUSION_SENSORS];
-    int n;
-
-    for (int i = 0; i < NUM_FUSION_SENSORS; i++) {
-        arr[i] = i;
-    }
-
-    /* For number of different combinations */
-    for (int i = 0; i < NUM_MAX_FUSIONS; i++) {
-        n = fus_sensor_list_ix;
-        print_fusion_list(arr, n, i + 1, available_bytes);
-    }
-}
-
-/**
- * @brief      Check if requested sensor list is valid sensor fusion, create sensor buffer
- *
- * @param[in]  sensor_list      Sensor list to sample (ie. "Inertial + Environmental")
- * 
- * @retval  false if invalid sensor_list
- */
-bool ei_is_fusion(const char *sensor_list)
-{
-    char *buff;
-    bool is_fusion, added_loc;
-
-    num_fusions = 0;
-    num_fusion_axis = 0;
-    for (int i = 0; i < NUM_FUSION_SENSORS; i++) {
-        fusion_sensors[i] = NULL;
-    } // clear fusion list
-
-    // Copy const string in heap mem
-    char *sensor_string = (char *)ei_malloc(strlen(sensor_list));
-    if (sensor_string == NULL) {
-        return false;
-    }
-    strncpy(sensor_string, sensor_list, strlen(sensor_list));
-
-    buff = strtok(sensor_string, "+");
-
-    while (buff != NULL &&
-           num_fusions < NUM_MAX_FUSIONS) { // while there is sensors names in sensor list buffer
-        is_fusion = false;
-        for (int i = 0; i < fus_sensor_list_ix;
-             i++) { // check for sensor name in list of fusable sensors
-            if (strstr(buff, fusable_sensor_list[i].name)) { // is a matching sensor
-                added_loc = false;
-                for (int j = 0; j < num_fusions; j++) {
-                    if (strstr(
-                            buff,
-                            fusion_sensors[j]->name)) { // has already been added to sampling list
-                        added_loc = true;
-                        break;
-                    }
-                }
-                if (!added_loc) {
-                    fusion_sensors[num_fusions] =
-                        (ei_device_fusion_sensor_t *)&fusable_sensor_list[i];
-                    num_fusion_axis += fusable_sensor_list[i].num_axis;
-
-                    /* Add all axes for ingestions */
-                    fusion_sensors[num_fusions]->axis_flag_used =
-                        generate_bit_flags(fusable_sensor_list[i].num_axis);
-                    num_fusions++;
-                }
-                is_fusion = true;
-            }
-        }
-        if (!is_fusion) { // no matching sensors in sensor_list
-            break;
-        }
-        buff = strtok(NULL, "+");
-    }
-
-    ei_free(sensor_string);
-    return is_fusion;
+    return true;
 }
 
 /**
@@ -202,12 +99,14 @@ bool ei_is_fusion(const char *sensor_list)
 bool ei_connect_fusion_list(const char *input_list, ei_fusion_list_format format)
 {
     char *buff;
-    bool is_fusion, added_loc;
+    bool is_fusion;
 
     num_fusions = 0;
     num_fusion_axis = 0;
-    for (int i = 0; i < NUM_FUSION_SENSORS; i++) {
-        fusion_sensors[i] = NULL;
+    fusion_sensors.clear();
+
+    for (unsigned int i = 0; i < fusable_sensor_list.size(); i++) {
+        fusion_sensors.push_back(nullptr);
     } // clear fusion list
 
     // Copy const string in heap mem
@@ -222,7 +121,7 @@ bool ei_connect_fusion_list(const char *input_list, ei_fusion_list_format format
 
     while (buff != NULL) { // Run through buffer
         is_fusion = false;
-        for (int i = 0; i < fus_sensor_list_ix;
+        for (unsigned int i = 0; i < fusable_sensor_list.size();
              i++) { // check for axis name in list of fusable sensors
 
             if (format == SENSOR_FORMAT) {
@@ -259,6 +158,7 @@ bool ei_connect_fusion_list(const char *input_list, ei_fusion_list_format format
  */
 void ei_fusion_read_axis_data(void)
 {
+    EiDeviceInfo* dev = EiDeviceInfo::get_device();
     fusion_sample_format_t *sensor_data;
     fusion_sample_format_t *data;
     uint32_t loc = 0;
@@ -295,7 +195,7 @@ void ei_fusion_read_axis_data(void)
     if (fusion_cb_sampler(
             (const void *)&data[0],
             (sizeof(fusion_sample_format_t) * num_fusion_axis))) // send fusion data to sampler
-        EiDevInfo->stop_sample_thread(); // if last sample detach
+        dev->stop_sample_thread(); // if last sample detach
 
     ei_free(data);
 }
@@ -310,13 +210,14 @@ void ei_fusion_read_axis_data(void)
  */
 bool ei_fusion_sample_start(sampler_callback callsampler, float sample_interval_ms)
 {
+    EiDeviceInfo* dev = EiDeviceInfo::get_device();
     fusion_cb_sampler = callsampler; // connect cb sampler (used in ei_fusion_read_data())
 
     if (fusion_cb_sampler == NULL) {
         return false;
     }
     else {
-        EiDevInfo->start_sample_thread(ei_fusion_read_axis_data, sample_interval_ms);
+        dev->start_sample_thread(ei_fusion_read_axis_data, sample_interval_ms);
         return true;
     }
 }
@@ -324,20 +225,21 @@ bool ei_fusion_sample_start(sampler_callback callsampler, float sample_interval_
 /**
  * @brief      Create payload for sampling list, pad, start sampling
  */
-bool ei_fusion_setup_data_sampling()
+bool ei_fusion_setup_data_sampling(void)
 {
+    EiDeviceInfo* dev = EiDeviceInfo::get_device();
+    EiDeviceMemory* mem = dev->get_memory();
     payload_bytes = 0;
 
-    if (num_fusion_axis == 0) { /* ei_is_fusion should be called first */
+    if (num_fusion_axis == 0) {
         return false;
     }
 
     // Calculate number of bytes available on flash for sampling, reserve 1 block for header + overhead
-    uint32_t available_bytes = (EiDevInfo->filesys_get_n_available_sample_blocks() - 1) *
-        EiDevInfo->filesys_get_block_size();
+    uint32_t available_bytes = (mem->get_available_sample_blocks() - 1) * mem->block_size;
     // Check available sample size before sampling for the selected frequency
     uint32_t requested_bytes = ceil(
-        (ei_config_get_config()->sample_length_ms / ei_config_get_config()->sample_interval_ms) *
+        (dev->get_sample_length_ms() / dev->get_sample_interval_ms()) *
         (sizeof(fusion_sample_format_t) * num_fusion_axis) * 2);
     if (requested_bytes > available_bytes) {
         ei_printf(
@@ -345,17 +247,17 @@ bool ei_fusion_setup_data_sampling()
             (int)floor(
                 available_bytes /
                 (((sizeof(fusion_sample_format_t) * num_fusion_axis) * 2) /
-                 ei_config_get_config()->sample_interval_ms)),
-            (1.f / ei_config_get_config()->sample_interval_ms));
+                 dev->get_sample_interval_ms())),
+            (1.f / dev->get_sample_interval_ms()));
         return false;
     }
 
     int index = 0;
     // create header payload from individual sensors
-    sensor_aq_payload_info payload = { EiDevInfo->get_id_pointer(),
-                                       EiDevInfo->get_type_pointer(),
-                                       ei_config_get_config()->sample_interval_ms,
-                                       NULL };
+    sensor_aq_payload_info payload = { dev->get_device_id().c_str(),
+                                       dev->get_device_type().c_str(),
+                                       dev->get_sample_interval_ms(),
+                                       {} };
     for (int i = 0; i < num_fusions; i++) {
         for (int j = 0; j < fusion_sensors[i]->num_axis; j++) {
             payload.sensors[index].name = fusion_sensors[i]->sensors[j].name;
@@ -392,20 +294,67 @@ bool ei_fusion_setup_data_sampling()
 }
 
 /**
+ * @brief   Builds list of possible sensor combinations from fusable_sensor_list
+ */
+void ei_built_sensor_fusion_list(void)
+{
+    const vector<fused_sensors_t> sens_list = ei_get_sensor_fusion_list();
+
+    /*
+     * Print in the form:
+     * Name: Sensor1 + Sensor2, Max sample length: 12345s, Frequencies: [123.45Hz]
+     */
+    for (auto it = sens_list.begin(); it != sens_list.end(); it++) {
+        ei_printf("Name: %s, ", it->name.c_str());
+        ei_printf("Max sample length: %us, ", it->max_sample_length);
+        ei_printf("Frequencies: [");
+        for (auto freq = it->frequencies.begin(); freq != it->frequencies.end();) {
+            ei_printf_float(*freq);
+            ei_printf("Hz");
+            freq++;
+            if (freq != it->frequencies.end()) {
+                ei_printf(", ");
+            }
+        }
+        ei_printf("]\n");
+    }
+}
+
+const vector<fused_sensors_t> &ei_get_sensor_fusion_list(void)
+{
+    EiDeviceInfo* dev = EiDeviceInfo::get_device();
+    EiDeviceMemory* mem = dev->get_memory();
+    // Calculate number of bytes available on flash for sampling, reserve 1 block for header + overhead
+    uint32_t available_bytes = (mem->get_available_sample_blocks() - 1) * mem->block_size;
+
+    fused_sensors.clear();
+
+    /* For number of different combinations */
+    for (int i = 0; i < NUM_MAX_FUSIONS; i++) {
+        print_fusion_list(i + 1, available_bytes);
+    }
+
+    return fused_sensors;
+}
+
+/**
  * @brief The main function that prints all combinations of size r
  * in arr[] of size n. This function mainly uses print_all_combinations()
- * @param arr
- * @param n
  * @param r
  * @param ingest_memory_sizes
  */
-static void print_fusion_list(int arr[], int n, int r, uint32_t ingest_memory_size)
+static void print_fusion_list(int r, uint32_t ingest_memory_size)
 {
     /* A temporary array to store all combination one by one */
     int data[r];
+    int arr[fusable_sensor_list.size()];
+
+    for (unsigned int i = 0; i < fusable_sensor_list.size(); i++) {
+        arr[i] = i;
+    }
 
     /* Print all combination using temporary array 'data[]' */
-    print_all_combinations(arr, data, 0, n - 1, 0, r, ingest_memory_size);
+    print_all_combinations(arr, data, 0, 0, r, ingest_memory_size);
 }
 
 /**
@@ -414,7 +363,6 @@ static void print_fusion_list(int arr[], int n, int r, uint32_t ingest_memory_si
  * @param arr Input array
  * @param data Temperory data array, holds indexes
  * @param start Start idx of arr[]
- * @param end End idx of arr[]
  * @param index Current index in data[]
  * @param r Size of combinations
  * @param ingest_memory_size Available mem for sample data
@@ -423,54 +371,51 @@ static void print_all_combinations(
     int arr[],
     int data[],
     int start,
-    int end,
     int index,
     int r,
     uint32_t ingest_memory_size)
 {
+    stringstream buf;
+    fused_sensors_t sens;
     /* Print sensor string if requested combinations found */
     if (index == r) {
         int num_fusion_axis = 0;
-        ei_printf("Name: ");
         for (int j = 0; j < r; j++) {
-            ei_printf("%s", fusable_sensor_list[data[j]].name);
+            buf << fusable_sensor_list[data[j]].name;
             num_fusion_axis += fusable_sensor_list[data[j]].num_axis;
 
             if (j + 1 < r) {
-                ei_printf(" + ");
+                buf << " + ";
             }
         }
+        sens.name = buf.str();
 
         if (index == 1) {
-            float frequency = highest_frequency(
-                &fusable_sensor_list[data[0]].frequencies[0], EI_MAX_FREQUENCIES);
-
-            ei_printf(
-                ", Max sample length: %us, Frequencies: [",
-                (int)(ingest_memory_size / (frequency * (sizeof(fusion_sample_format_t) * num_fusion_axis) * 2)));
+            float frequency =
+                highest_frequency(&fusable_sensor_list[data[0]].frequencies[0], EI_MAX_FREQUENCIES);
+            sens.max_sample_length =
+                (int)(ingest_memory_size / (frequency * (sizeof(fusion_sample_format_t) * num_fusion_axis) * 2));
             for (int j = 0; j < EI_MAX_FREQUENCIES; j++) {
                 if (fusable_sensor_list[data[0]].frequencies[j] != 0.0f) {
-                    if (j != 0) {
-                        ei_printf(", ");
-                    }
-                    ei_printf("%.2fHz", fusable_sensor_list[data[0]].frequencies[j]);
+                    sens.frequencies.push_back(fusable_sensor_list[data[0]].frequencies[j]);
                 }
             }
         }
         else { // fusion, use set freq
-            ei_printf(
-                ", Max sample length: %us, Frequencies: [%.2fHz",
-                (int)(ingest_memory_size / (FUSION_FREQUENCY * (sizeof(fusion_sample_format_t) * num_fusion_axis) * 2)),
-                FUSION_FREQUENCY);
+            sens.max_sample_length =
+                (int)(ingest_memory_size / (FUSION_FREQUENCY * (sizeof(fusion_sample_format_t) * num_fusion_axis) * 2));
+            sens.frequencies.push_back(FUSION_FREQUENCY);
         }
-        ei_printf("]\n");
+        fused_sensors.push_back(sens);
         return;
     }
 
     /* Replace index with all possible combinations */
-    for (int i = start; i <= end && end - i + 1 >= r - index; i++) {
+    for (int i = start;
+         i <= fusable_sensor_list.size() - 1 && fusable_sensor_list.size() - i >= r - index;
+         i++) {
         data[index] = arr[i];
-        print_all_combinations(arr, data, i + 1, end, index + 1, r, ingest_memory_size);
+        print_all_combinations(arr, data, i + 1, index + 1, r, ingest_memory_size);
     }
 }
 
@@ -587,7 +532,7 @@ static float highest_frequency(float *frequencies, size_t size)
 {
     float highest = 0.f;
 
-    for (int i = 0; i < size; i++) {
+    for (int i = 0; i < (int)size; i++) {
         if (highest < frequencies[i]) {
             highest = frequencies[i];
         }

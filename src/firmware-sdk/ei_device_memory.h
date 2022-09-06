@@ -1,8 +1,30 @@
+/* Edge Impulse firmware SDK
+ * Copyright (c) 2022 EdgeImpulse Inc.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #ifndef EI_DEVICE_MEMORY_H
 #define EI_DEVICE_MEMORY_H
 
-#include <cstdint>
 #include <cmath>
+#include <cstdint>
 #include <cstring>
 
 /**
@@ -46,35 +68,35 @@ protected:
      * @brief size of device configuration block, device or even firmware specific.
      * 
      */
-    const uint32_t config_size;
+    uint32_t config_size;
     /**
      * @brief number of blocks occupied by config. Typically 1, but depending on memory
      * type and config size, it can be multiple blocks.
      * 
      */
-    const uint32_t used_blocks;
+    uint32_t used_blocks;
     /**
      * @brief total number of blocks in the memory
      * 
      */
-    const uint32_t memory_blocks;
+    uint32_t memory_blocks;
     /**
      * @brief total size of memory, typically integer multiply of blocks
      * 
      */
-    const uint32_t memory_size;
+    uint32_t memory_size;
 
 public:
     /**
      * @brief size of the memory block in bytes
      */
-    const uint32_t block_size;
+    uint32_t block_size;
     /**
      * @brief Erase time of a single block/sector/page in ms (miliseconds).
      * For RAM it can be set to 0 or 1.
      * For Flash memories take this value from datasheet or measure.
      */
-    const uint32_t block_erase_time;
+    uint32_t block_erase_time;
 
     /**
      * @brief Construct a new Ei Device Memory object, make sure to pass all necessary data
@@ -86,15 +108,18 @@ public:
      * @param memory_size see property description
      * @param block_size see property description
      */
-    EiDeviceMemory(uint32_t config_size, uint32_t erase_time, uint32_t memory_size, uint32_t block_size):
-        config_size(config_size),
-        used_blocks((config_size < block_size) ? 1 : ceil(float(config_size) / block_size)),
-        memory_blocks(memory_size / block_size),
-        memory_size(memory_size),
-        block_size(block_size),
-        block_erase_time(erase_time)
+    EiDeviceMemory(
+        uint32_t config_size,
+        uint32_t erase_time,
+        uint32_t memory_size,
+        uint32_t block_size)
+        : config_size(config_size)
+        , used_blocks((config_size < block_size) ? 1 : ceil(float(config_size) / block_size))
+        , memory_blocks(memory_size / block_size)
+        , memory_size(memory_size)
+        , block_size(block_size)
+        , block_erase_time(erase_time)
     {
-
     }
 
     virtual uint32_t get_available_sample_blocks(void)
@@ -109,12 +134,12 @@ public:
 
     virtual bool save_config(const uint8_t *config, uint32_t config_size)
     {
-        uint32_t used_bytes = this->used_blocks * this->block_size;
-        if(this->erase_data(0, used_bytes) != used_bytes) {
+        uint32_t used_bytes = used_blocks * block_size;
+        if (erase_data(0, used_bytes) != used_bytes) {
             return false;
         }
 
-        if(this->write_data(config, 0, config_size) != config_size) {
+        if (write_data(config, 0, config_size) != config_size) {
             return false;
         }
 
@@ -123,24 +148,53 @@ public:
 
     virtual bool load_config(uint8_t *config, uint32_t config_size)
     {
-        if(this->read_data(config, 0, config_size) != config_size) {
+        if (read_data(config, 0, config_size) != config_size) {
             return false;
         }
         return true;
     }
 
-    virtual uint32_t read_sample_data(uint8_t *sample_data, uint32_t address, uint32_t sample_data_size) = 0;
-    virtual uint32_t write_sample_data(const uint8_t *sample_data, uint32_t address, uint32_t sample_data_size) = 0;
-    virtual uint32_t erase_sample_data(uint32_t address, uint32_t num_bytes) = 0;
-};
+    virtual uint32_t
+    read_sample_data(uint8_t *sample_data, uint32_t address, uint32_t sample_data_size)
+    {
+        uint32_t offset = used_blocks * block_size;
 
+        return read_data(sample_data, offset + address, sample_data_size);
+    }
+
+    virtual uint32_t
+    write_sample_data(const uint8_t *sample_data, uint32_t address, uint32_t sample_data_size)
+    {
+        uint32_t offset = used_blocks * block_size;
+
+        return write_data(sample_data, offset + address, sample_data_size);
+    }
+
+    virtual uint32_t erase_sample_data(uint32_t address, uint32_t num_bytes)
+    {
+        uint32_t offset = used_blocks * block_size;
+
+        return erase_data(offset + address, num_bytes);
+    }
+
+
+    /**
+     * @brief Necessary for targets, such as RP2040, which have large Flash page size (256 bytes)
+     * For the targets, that don't require it, a default dummy implementation is provided
+     * to reduce boilerplate code in target flash implementation file.
+     */
+    virtual uint32_t flush_data(void)
+    {
+        return 0;
+    }
+};
 
 template <int BLOCK_SIZE = 512, int MEMORY_BLOCKS = 8> class EiDeviceRAM : public EiDeviceMemory {
 
 protected:
     uint8_t ram_memory[MEMORY_BLOCKS * BLOCK_SIZE];
 
-    uint32_t read_data(uint8_t *data, uint32_t address, uint32_t num_bytes)
+    uint32_t read_data(uint8_t *data, uint32_t address, uint32_t num_bytes) override
     {
         if (num_bytes > memory_size - address) {
             num_bytes = memory_size - address;
@@ -151,7 +205,7 @@ protected:
         return num_bytes;
     }
 
-    uint32_t write_data(const uint8_t *data, uint32_t address, uint32_t num_bytes)
+    uint32_t write_data(const uint8_t *data, uint32_t address, uint32_t num_bytes) override
     {
         if (num_bytes > memory_size - address) {
             num_bytes = memory_size - address;
@@ -162,7 +216,7 @@ protected:
         return num_bytes;
     }
 
-    uint32_t erase_data(uint32_t address, uint32_t num_bytes)
+    uint32_t erase_data(uint32_t address, uint32_t num_bytes) override
     {
         if (num_bytes > memory_size - address) {
             num_bytes = memory_size - address;
@@ -174,10 +228,9 @@ protected:
     }
 
 public:
-    EiDeviceRAM(uint32_t config_size):
-        EiDeviceMemory(config_size, 0, BLOCK_SIZE * MEMORY_BLOCKS, BLOCK_SIZE)
+    EiDeviceRAM(uint32_t config_size)
+        : EiDeviceMemory(config_size, 0, BLOCK_SIZE * MEMORY_BLOCKS, BLOCK_SIZE)
     {
-
     }
 
     /**
@@ -185,17 +238,21 @@ public:
      * pack data one after another for better memory utilization.
      * 
      */
-    uint32_t read_sample_data(uint8_t *sample_data, uint32_t address, uint32_t sample_data_size)
+    uint32_t
+    read_sample_data(uint8_t *sample_data, uint32_t address, uint32_t sample_data_size) override
     {
         return this->read_data(sample_data, config_size + address, sample_data_size);
     }
 
-    uint32_t write_sample_data(const uint8_t *sample_data, uint32_t address, uint32_t sample_data_size)
+    uint32_t write_sample_data(
+        const uint8_t *sample_data,
+        uint32_t address,
+        uint32_t sample_data_size) override
     {
         return this->write_data(sample_data, config_size + address, sample_data_size);
     }
 
-    uint32_t erase_sample_data(uint32_t address, uint32_t num_bytes)
+    uint32_t erase_sample_data(uint32_t address, uint32_t num_bytes) override
     {
         return this->erase_data(config_size + address, num_bytes);
     }

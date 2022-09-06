@@ -22,21 +22,21 @@
 
 /* Include ----------------------------------------------------------------- */
 #include "ei_device_nano_ble33.h"
-#include "nano_fs_commands.h"
 #include "ei_microphone.h"
-#include "ei_inertialsensor.h"
-
+#include "ei_camera.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include "Arduino.h"
 #include "mbed.h"
+#include "ei_flash_nano_ble33.h"
+#include "edge-impulse-sdk/porting/ei_classifier_porting.h"
 
 using namespace rtos;
 using namespace events;
 
 /* Constants --------------------------------------------------------------- */
 
-/** Memory location for the arduino device address */
+/** Memory location for the Nordic nRF52 device address */
 #define DEVICE_ID_LSB_ADDR  ((uint32_t)0x100000A4)
 #define DEVICE_ID_MSB_ADDR  ((uint32_t)0x100000A8)
 
@@ -46,50 +46,30 @@ using namespace events;
 /** Sensors */
 typedef enum
 {
-    ACCELEROMETER = 0,
-    MICROPHONE
+    MICROPHONE = 0,
 
 }used_sensors_t;
 
 #define EDGE_STRINGIZE_(x) #x
 #define EDGE_STRINGIZE(x) EDGE_STRINGIZE_(x)
 
-/** Device type */
-static const char *ei_device_type = EDGE_STRINGIZE(TARGET_NAME);
-
-/** Device id array */
-static char ei_device_id[DEVICE_ID_MAX_SIZE];
-
-/** Device object, for this class only 1 object should exist */
-EiDeviceNanoBle33 EiDevice;
-
 /** MBED thread */
 Thread fusion_thread;
 EventQueue fusion_queue;
 mbed::Ticker fusion_sample_rate;
 
-/* Private function declarations ------------------------------------------- */
-static int get_id_c(uint8_t out_buffer[32], size_t *out_size);
-static int get_type_c(uint8_t out_buffer[32], size_t *out_size);
-static bool get_wifi_connection_status_c(void);
-static bool get_wifi_present_status_c(void);
-
 /* Public functions -------------------------------------------------------- */
-
-EiDeviceNanoBle33::EiDeviceNanoBle33(void)
+EiDeviceNanoBle33::EiDeviceNanoBle33(EiDeviceMemory* mem)
 {
-    uint32_t *id_msb = (uint32_t *)DEVICE_ID_MSB_ADDR;
-    uint32_t *id_lsb = (uint32_t *)DEVICE_ID_LSB_ADDR;
+    EiDeviceInfo::memory = mem;
 
-    /* Setup device ID */
-    snprintf(&ei_device_id[0], DEVICE_ID_MAX_SIZE, "%02X:%02X:%02X:%02X:%02X:%02X"
-        ,(*id_msb >> 8) & 0xFF
-        ,(*id_msb >> 0) & 0xFF
-        ,(*id_lsb >> 24)& 0xFF
-        ,(*id_lsb >> 16)& 0xFF
-        ,(*id_lsb >> 8) & 0xFF
-        ,(*id_lsb >> 0) & 0xFF
-        );
+    load_config();
+
+    init_device_id();
+
+    camera_present = ei_camera_init();
+
+    device_type = std::string(EDGE_STRINGIZE(TARGET_NAME));
 
     /* Clear frequency arrays */
     for(int i = 0; i < EI_DEVICE_N_SENSORS; i++) {
@@ -99,71 +79,40 @@ EiDeviceNanoBle33::EiDeviceNanoBle33(void)
     }
 }
 
-/**
- * @brief      For the device ID, the BLE mac address is used.
- *             The mac address string is copied to the out_buffer.
- *
- * @param      out_buffer  Destination array for id string
- * @param      out_size    Length of id string
- *
- * @return     0
- */
-int EiDeviceNanoBle33::get_id(uint8_t out_buffer[32], size_t *out_size)
+void EiDeviceNanoBle33::init_device_id(void)
 {
-    return get_id_c(out_buffer, out_size);
+    uint32_t *id_msb = (uint32_t *)DEVICE_ID_MSB_ADDR;
+    uint32_t *id_lsb = (uint32_t *)DEVICE_ID_LSB_ADDR;
+    char buf[DEVICE_ID_MAX_SIZE];
+
+    /* Setup device ID */
+    snprintf(&buf[0], DEVICE_ID_MAX_SIZE, "%02X:%02X:%02X:%02X:%02X:%02X"
+        ,(*id_msb >> 8) & 0xFF
+        ,(*id_msb >> 0) & 0xFF
+        ,(*id_lsb >> 24)& 0xFF
+        ,(*id_lsb >> 16)& 0xFF
+        ,(*id_lsb >> 8) & 0xFF
+        ,(*id_lsb >> 0) & 0xFF
+        );
+
+    device_id = std::string(buf);
+    device_type = std::string(EDGE_STRINGIZE(TARGET_NAME));
+
 }
 
 /**
- * @brief      Gets the identifier pointer.
- *
- * @return     The identifier pointer.
+ * @brief get_device is a static method of EiDeviceInfo class
+ * It is used to implement singleton paradigm, so we are returning
+ * here pointer always to the same object (dev)
+ * 
+ * @return EiDeviceInfo* 
  */
-const char *EiDeviceNanoBle33::get_id_pointer(void)
+EiDeviceInfo* EiDeviceInfo::get_device(void)
 {
-    return (const char *)ei_device_id;
-}
+    static EiFlashMemory memory(sizeof(EiConfig));
+    static EiDeviceNanoBle33 dev(&memory);
 
-/**
- * @brief      Copy device type in out_buffer & update out_size
- *
- * @param      out_buffer  Destination array for device type string
- * @param      out_size    Length of string
- *
- * @return     -1 if device type string exceeds out_buffer
- */
-int EiDeviceNanoBle33::get_type(uint8_t out_buffer[32], size_t *out_size)
-{
-    return get_type_c(out_buffer, out_size);
-}
-
-/**
- * @brief      Gets the type pointer.
- *
- * @return     The type pointer.
- */
-const char *EiDeviceNanoBle33::get_type_pointer(void)
-{
-    return (const char *)ei_device_type;
-}
-
-/**
- * @brief      No Wifi available for device.
- *
- * @return     Always return false
- */
-bool EiDeviceNanoBle33::get_wifi_connection_status(void)
-{
-    return false;
-}
-
-/**
- * @brief      No Wifi available for device.
- *
- * @return     Always return false
- */
-bool EiDeviceNanoBle33::get_wifi_present_status(void)
-{
-    return false;
+    return &dev;
 }
 
 /**
@@ -177,13 +126,7 @@ bool EiDeviceNanoBle33::get_wifi_present_status(void)
 bool EiDeviceNanoBle33::get_sensor_list(const ei_device_sensor_t **sensor_list, size_t *sensor_list_size)
 {
     /* Calculate number of bytes available on flash for sampling, reserve 1 block for header + overhead */
-    uint32_t available_bytes = (filesys_get_n_available_sample_blocks()-1) * filesys_get_block_size();
-
-    sensors[ACCELEROMETER].name = "Built-in accelerometer";
-    sensors[ACCELEROMETER].start_sampling_cb = &ei_inertial_setup_data_sampling;
-    sensors[ACCELEROMETER].frequencies[0] = 62.5f;
-    sensors[ACCELEROMETER].frequencies[1] = 100.0f;
-    sensors[ACCELEROMETER].max_sample_length_s = available_bytes / (sensors[ACCELEROMETER].frequencies[0] * SIZEOF_N_AXIS_SAMPLED * 2);
+    uint32_t available_bytes = (memory->get_available_sample_blocks()-1) * memory->block_size;
 
     sensors[MICROPHONE].name = "Built-in microphone";
     sensors[MICROPHONE].start_sampling_cb = &ei_microphone_sample_start;
@@ -205,39 +148,29 @@ bool EiDeviceNanoBle33::get_sensor_list(const ei_device_sensor_t **sensor_list, 
  *
  * @return     False if all went ok
  */
-bool EiDeviceNanoBle33::get_snapshot_list(const ei_device_snapshot_resolutions_t **snapshot_list, size_t *snapshot_list_size,
-                                         const char **color_depth)
+EiSnapshotProperties EiDeviceNanoBle33::get_snapshot_list(void)
 {
-    snapshot_resolutions[0].width = 160;
-    snapshot_resolutions[0].height = 120;
-    snapshot_resolutions[1].width = 128;
-    snapshot_resolutions[1].height = 96;
+    ei_device_snapshot_resolutions_t *res = NULL;
+    uint8_t res_num = 0;
 
-    *snapshot_list      = snapshot_resolutions;
-    *snapshot_list_size = EI_DEVICE_N_RESOLUTIONS;
-    *color_depth = "RGB";
+    EiSnapshotProperties props = {
+        .has_snapshot = false,
+        .support_stream = false,
+        .color_depth = "RGB",
+        .resolutions_num = res_num,
+        .resolutions = res
+    };
 
-    return false;
-}
+    if(this->camera_present == true) {
+        get_resolutions(&res, &res_num);
+        props.has_snapshot = true;
+        props.support_stream = true;
+        props.color_depth = "RGB";
+        props.resolutions_num = res_num;
+        props.resolutions = res;
+    }
 
-/**
- * @brief Get byte size of memory block
- *
- * @return uint32_t size in bytes
- */
-uint32_t EiDeviceNanoBle33::filesys_get_block_size(void)
-{
-    return ei_nano_fs_get_block_size();
-}
-
-/**
- * @brief Get number of available blocks
- *
- * @return uint32_t
- */
-uint32_t EiDeviceNanoBle33::filesys_get_n_available_sample_blocks(void)
-{
-    return ei_nano_fs_get_n_available_sample_blocks();
+    return props;
 }
 
 /**
@@ -271,7 +204,7 @@ bool EiDeviceNanoBle33::stop_sample_thread(void)
  * @return     False if all went ok
  */
 bool EiDeviceNanoBle33::get_resize_list(
-    const ei_device_resize_resolutions_t **resize_list,
+    const ei_device_snapshot_resolutions_t **resize_list,
     size_t *resize_list_size)
 {
     resize_resolutions[0].width = 42;
@@ -286,64 +219,6 @@ bool EiDeviceNanoBle33::get_resize_list(
 }
 
 /**
- * @brief      Get a C callback for the get_id method
- *
- * @return     Pointer to c get function
- */
-c_callback EiDeviceNanoBle33::get_id_function(void)
-{
-    return &get_id_c;
-}
-
-/**
- * @brief      Get a C callback for the get_type method
- *
- * @return     Pointer to c get function
- */
-c_callback EiDeviceNanoBle33::get_type_function(void)
-{
-    return &get_type_c;
-}
-
-/**
- * @brief      Get a C callback for the get_wifi_connection_status method
- *
- * @return     Pointer to c get function
- */
-c_callback_status EiDeviceNanoBle33::get_wifi_connection_status_function(void)
-{
-    return &get_wifi_connection_status_c;
-}
-
-/**
- * @brief      Get a C callback for the wifi present method
- *
- * @return     The wifi present status function.
- */
-c_callback_status EiDeviceNanoBle33::get_wifi_present_status_function(void)
-{
-    return &get_wifi_present_status_c;
-}
-
-/**
- * @brief      Printf function uses vsnprintf and output using Arduino Serial
- *
- * @param[in]  format     Variable argument list
- */
-void ei_printf(const char *format, ...) {
-    char print_buf[1024] = { 0 };
-
-    va_list args;
-    va_start(args, format);
-    int r = vsnprintf(print_buf, sizeof(print_buf), format, args);
-    va_end(args);
-
-    if (r > 0) {
-        Serial.write(print_buf);
-    }
-}
-
-/**
  * @brief      Write serial data with length to Serial output
  *
  * @param      data    The data
@@ -351,15 +226,6 @@ void ei_printf(const char *format, ...) {
  */
 void ei_write_string(char *data, int length) {
     Serial.write(data, length);
-}
-
-/**
- * @brief      Get Arduino serial object
- *
- * @return     pointer to Serial
- */
-mbed::Stream* ei_get_serial() {
-    return (mbed::Stream *)&Serial;
 }
 
 /**
@@ -380,68 +246,3 @@ char ei_get_serial_byte(void) {
     return Serial.read();
 }
 
-/**
- * @brief      Write character to serial
- *
- * @param      cChar     Char addr to write
- */
-void ei_putc(char cChar) {
-    Serial.write(&cChar, 1);
-}
-
-/* Private functions ------------------------------------------------------- */
-
-static int get_id_c(uint8_t out_buffer[32], size_t *out_size)
-{
-    size_t length = strlen(ei_device_id);
-
-    if(length < 32) {
-        memcpy(out_buffer, ei_device_id, length);
-
-        *out_size = length;
-        return 0;
-    }
-
-    else {
-        *out_size = 0;
-        return -1;
-    }
-}
-
-static int get_type_c(uint8_t out_buffer[32], size_t *out_size)
-{
-    size_t length = strlen(ei_device_type);
-
-    if(length < 32) {
-        memcpy(out_buffer, ei_device_type, length);
-
-        *out_size = length;
-        return 0;
-    }
-
-    else {
-        *out_size = 0;
-        return -1;
-    }
-}
-
-static bool get_wifi_connection_status_c(void)
-{
-    return false;
-}
-
-static bool get_wifi_present_status_c(void)
-{
-    return false;
-}
-
-/**
- * @brief      Put char from UART
- *
- * @param[in] send_char Character to be sent over UART
- *
- */
-void ei_putchar(char c)
-{
-    Serial.write(c);
-}

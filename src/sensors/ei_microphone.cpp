@@ -22,7 +22,6 @@
 
 /* Include ----------------------------------------------------------------- */
 #include "ei_microphone.h"
-#include "nano_fs_commands.h"
 #include "ei_device_nano_ble33.h"
 #include <PDM.h>
 #include "setup.h"
@@ -31,6 +30,7 @@
 #include "sensor_aq_none.h"
 #include "edge-impulse-sdk/CMSIS/DSP/Include/arm_math.h"
 #include "edge-impulse-sdk/dsp/numpy.hpp"
+#include "ei_flash_nano_ble33.h"
 
 
 typedef struct {
@@ -42,7 +42,6 @@ typedef struct {
 } inference_t;
 
 /* Extern declared --------------------------------------------------------- */
-extern ei_config_t *ei_config_get_config();
 extern mbed::DigitalOut led;
 
 using namespace ei;
@@ -119,7 +118,8 @@ static void ei_microphone_blink() {
 
 static void audio_buffer_callback(uint32_t n_bytes)
 {
-    ei_nano_fs_write_samples((const void *)sampleBuffer, headerOffset + current_sample, n_bytes);
+    EiDeviceMemory *mem = EiDeviceInfo::get_device()->get_memory();
+    mem->write_sample_data((const uint8_t*)sampleBuffer, headerOffset + current_sample, n_bytes);
 
 
     ei_mic_ctx.signature_ctx->update(ei_mic_ctx.signature_ctx, (uint8_t*)sampleBuffer, n_bytes);
@@ -172,26 +172,17 @@ static void pdm_data_ready_inference_callback(void)
     }
 }
 
-static void finish_and_upload(char *filename, uint32_t sample_length_ms) {
-
+static void finish_and_upload(void) {
 
     ei_printf("Done sampling, total bytes collected: %u\n", current_sample);
 
     mbed::Ticker t;
     t.attach(&ei_microphone_blink, 1.0f);
-
-
     ei_printf("[1/1] Uploading file to Edge Impulse...\n");
-
-    mbed::Timer upload_timer;
-    upload_timer.start();
-
     //ei_printf("Not uploading file, not connected to WiFi. Used buffer, type=%d, from=%lu, to=%lu, sensor_name=%s, sensor_units=%s.\n",
     //            EI_INT16, 0, sample_block*4096 + headerOffset, "audio", "wav");
     ei_printf("Not uploading file, not connected to WiFi. Used buffer, from=%lu, to=%lu.\n", 0, current_sample + headerOffset);
-
-    upload_timer.stop();
-    ei_printf("[1/1] Uploading file to Edge Impulse OK (took %d ms.)\n", upload_timer.read_ms());
+    ei_printf("[1/1] Uploading file to Edge Impulse OK (took 0 ms.)\n");
 
     is_uploaded = true;
 
@@ -222,11 +213,13 @@ static int insert_ref(char *buffer, int hdrLength)
 
 static bool create_header(void)
 {
-    sensor_aq_init_mbedtls_hs256_context(&ei_mic_signing_ctx, &ei_mic_hs_ctx, ei_config_get_config()->sample_hmac_key);
+    EiDeviceInfo *dev = EiDeviceInfo::get_device();
+    EiDeviceMemory *mem = dev->get_memory();
+    sensor_aq_init_mbedtls_hs256_context(&ei_mic_signing_ctx, &ei_mic_hs_ctx, dev->get_sample_hmac_key().c_str());
 
     sensor_aq_payload_info payload = {
-        EiDevice.get_id_pointer(),
-        EiDevice.get_type_pointer(),
+        dev->get_id_pointer(),
+        dev->get_type_pointer(),
         1000.0f / static_cast<float>(audio_sampling_frequency),
         { { "audio", "wav" } }
     };
@@ -266,10 +259,10 @@ static bool create_header(void)
     end_of_header_ix += ref_size;
 
     // Write to blockdevice
-    tr = ei_nano_fs_write_samples(ei_mic_ctx.cbor_buffer.ptr, 0, end_of_header_ix);
+    tr = mem->write_sample_data((const uint8_t*)ei_mic_ctx.cbor_buffer.ptr, 0, end_of_header_ix);
 
-    if (tr != 0) {
-        ei_printf("Failed to write to header blockdevice (%d)\n", tr);
+    if (tr != end_of_header_ix) {
+        ei_printf("Failed to write to header blockdevice\n");
         return false;
     }
 
@@ -283,6 +276,8 @@ static bool create_header(void)
 
 bool ei_microphone_record(uint32_t sample_length_ms, uint32_t start_delay_ms, bool print_start_messages)
 {
+    EiDeviceMemory *mem = EiDeviceInfo::get_device()->get_memory();
+
     if (print_start_messages) {
         ei_printf("Starting in %lu ms... (or until all flash was erased)\n", start_delay_ms < 2000 ? 2000 : start_delay_ms);
     }
@@ -291,7 +286,7 @@ bool ei_microphone_record(uint32_t sample_length_ms, uint32_t start_delay_ms, bo
         ThisThread::sleep_for(2000 - start_delay_ms);
     }
 
-    if(ei_nano_fs_erase_sampledata(0, (samples_required << 1) + 4096) != NANO_FS_CMD_OK) {
+    if(mem->erase_sample_data(0, (samples_required << 1) + 4096) != (samples_required << 1) + 4096) {
         return false;
     }
 
@@ -309,20 +304,20 @@ bool ei_microphone_record(uint32_t sample_length_ms, uint32_t start_delay_ms, bo
 bool ei_microphone_inference_start(uint32_t n_samples, float interval_ms)
 {
 
-    inference.buffers[0] = (int16_t *)malloc(n_samples * sizeof(int16_t));
+    inference.buffers[0] = (int16_t *)ei_malloc(n_samples * sizeof(int16_t));
 
     if(inference.buffers[0] == NULL) {
         return false;
     }
 
-    inference.buffers[1] = (int16_t *)malloc(n_samples * sizeof(int16_t));
+    inference.buffers[1] = (int16_t *)ei_malloc(n_samples * sizeof(int16_t));
 
     if(inference.buffers[1] == NULL) {
         free(inference.buffers[0]);
         return false;
     }
 
-    sampleBuffer = (int16_t *)malloc((n_samples / 100) * sizeof(int16_t));
+    sampleBuffer = (int16_t *)ei_malloc((n_samples / 100) * sizeof(int16_t));
 
     if(sampleBuffer == NULL) {
         free(inference.buffers[0]);
@@ -421,25 +416,20 @@ bool ei_microphone_inference_end(void)
  */
 bool ei_microphone_sample_start(void)
 {
+    EiDeviceInfo *dev = EiDeviceInfo::get_device();
+    EiDeviceMemory *mem = dev->get_memory();
     // this sensor does not have settable interval...
     // ei_config_set_sample_interval(static_cast<float>(1000) / static_cast<float>(audio_sampling_frequency));
     int sample_length_blocks;
 
     ei_printf("Sampling settings:\n");
-    ei_printf("\tInterval: %.5f ms.\n", (float)ei_config_get_config()->sample_interval_ms);
-    ei_printf("\tLength: %lu ms.\n", ei_config_get_config()->sample_length_ms);
-    ei_printf("\tName: %s\n", ei_config_get_config()->sample_label);
-    ei_printf("\tHMAC Key: %s\n", ei_config_get_config()->sample_hmac_key);
-    char filename[256];
-    int fn_r = snprintf(filename, 256, "/fs/%s", ei_config_get_config()->sample_label);
-    if (fn_r <= 0) {
-        ei_printf("ERR: Failed to allocate file name\n");
-        return false;
-    }
-    ei_printf("\tFile name: %s\n", filename);
+    ei_printf("\tInterval: %.5f ms.\n", dev->get_sample_interval_ms());
+    ei_printf("\tLength: %lu ms.\n", dev->get_sample_length_ms());
+    ei_printf("\tName: %s\n", dev->get_sample_label().c_str());
+    ei_printf("\tHMAC Key: %s\n", dev->get_sample_hmac_key().c_str());
+    ei_printf("\tFile name: /fs/%s\n", dev->get_sample_label().c_str());
 
-
-    samples_required = (uint32_t)(((float)ei_config_get_config()->sample_length_ms) / ei_config_get_config()->sample_interval_ms);
+    samples_required = (uint32_t)((dev->get_sample_length_ms()) / dev->get_sample_interval_ms());
 
     /* Round to even number of samples for word align flash write */
     if(samples_required & 1) {
@@ -450,7 +440,7 @@ bool ei_microphone_sample_start(void)
 
     is_uploaded = false;
 
-    sampleBuffer = (int16_t *)malloc(EiDevice.filesys_get_block_size());
+    sampleBuffer = (int16_t *)ei_malloc(mem->block_size);
 
     if (sampleBuffer == NULL) {
         return false;
@@ -459,8 +449,8 @@ bool ei_microphone_sample_start(void)
     // configure the data receive callback
     PDM.onReceive(&pdm_data_ready_callback);
 
-    // ei_printf("Sector size: %d\r\n", EiDevice.filesys_get_block_size());
-    PDM.setBufferSize(EiDevice.filesys_get_block_size());
+    // ei_printf("Sector size: %d\r\n", mem->block_size);
+    PDM.setBufferSize(mem->block_size);
 
     // initialize PDM with:
     // - one channel (mono mode)
@@ -470,7 +460,7 @@ bool ei_microphone_sample_start(void)
     }
 
     /* Calclate sample rate from sample interval */
-    audio_sampling_frequency = (uint32_t)(1000.f / ei_config_get_config()->sample_interval_ms);
+    audio_sampling_frequency = (uint32_t)(1000.f / dev->get_sample_interval_ms());
 
     if(audio_sampling_frequency != 16000) {
         nrf_pdm_clock_set((nrf_pdm_freq_t)pdm_clock_calculate(audio_sampling_frequency));
@@ -479,7 +469,7 @@ bool ei_microphone_sample_start(void)
     // set the gain, defaults to 20
     PDM.setGain(127);
 
-    bool r = ei_microphone_record(ei_config_get_config()->sample_length_ms, (((samples_required <<1)/ EiDevice.filesys_get_block_size()) * NANO_FS_BLOCK_ERASE_TIME_MS), true);
+    bool r = ei_microphone_record(dev->get_sample_length_ms(), (((samples_required <<1)/ mem->block_size) * mem->block_erase_time), true);
     if (!r) {
         return r;
     }
@@ -498,15 +488,15 @@ bool ei_microphone_sample_start(void)
     }
 
     // load the first page in flash...
-    uint8_t *page_buffer = (uint8_t*)malloc(EiDevice.filesys_get_block_size());
+    uint8_t *page_buffer = (uint8_t*)ei_malloc(mem->block_size);
     if (!page_buffer) {
         ei_printf("Failed to allocate a page buffer to write the hash\n");
         return false;
     }
 
-    int j = ei_nano_fs_read_sample_data(page_buffer, 0, EiDevice.filesys_get_block_size());
-    if (j != 0) {
-        ei_printf("Failed to read first page (%d)\n", j);
+    int j = mem->read_sample_data(page_buffer, 0, mem->block_size);
+    if (j != mem->block_size) {
+        ei_printf("Failed to read first page\n");
         free(page_buffer);
         return false;
     }
@@ -530,24 +520,24 @@ bool ei_microphone_sample_start(void)
         page_buffer[ei_mic_ctx.signature_index + (hash_ix * 2) + 1] = second_c;
     }
 
-    j = ei_nano_fs_erase_sampledata(0, EiDevice.filesys_get_block_size());
-    if (j != 0) {
-        ei_printf("Failed to erase first page (%d)\n", j);
+    j = mem->erase_sample_data(0, mem->block_size);
+    if (j != mem->block_size) {
+        ei_printf("Failed to erase first page\n");
         free(page_buffer);
         return false;
     }
 
-    j = ei_nano_fs_write_samples(page_buffer, 0, EiDevice.filesys_get_block_size());
+    j = mem->write_sample_data(page_buffer, 0, mem->block_size);
 
     free(page_buffer);
 
-    if (j != 0) {
-        ei_printf("Failed to write first page with updated hash (%d)\n", j);
+    if (j != mem->block_size) {
+        ei_printf("Failed to write first page with updated hash\n");
         return false;
     }
 
 
-    finish_and_upload(filename, ei_config_get_config()->sample_length_ms);
+    finish_and_upload();
 
     return true;
 }

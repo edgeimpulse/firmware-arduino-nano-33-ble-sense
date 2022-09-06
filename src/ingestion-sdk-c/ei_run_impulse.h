@@ -24,7 +24,7 @@
 #define EI_RUN_IMPULSE_H
 
 /* Prototypes -------------------------------------------------------------- */
-void run_nn_debug(char *baudrate_s);
+void run_nn_debug(const char *baudrate_s);
 void run_nn_normal(void);
 void run_nn_continuous_normal(void);
 

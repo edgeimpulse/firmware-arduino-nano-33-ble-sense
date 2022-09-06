@@ -1,4 +1,4 @@
-/* Edge Impulse ingestion SDK
+/* Edge Impulse firmware SDK
  * Copyright (c) 2020 EdgeImpulse Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy

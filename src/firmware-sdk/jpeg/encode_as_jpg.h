@@ -10,6 +10,10 @@
 #include "JPEGENC.h"
 #include "edge-impulse-sdk/dsp/numpy.hpp"
 #include "edge-impulse-sdk/dsp/numpy_types.h"
+#include "edge-impulse-sdk/porting/ei_classifier_porting.h"
+#include "firmware-sdk/at_base64_lib.h"
+
+using namespace ei;
 
 int encode_as_jpg(uint8_t *framebuffer, size_t framebuffer_size, int width, int height, uint8_t *out_buffer, size_t out_buffer_size, size_t *out_size) {
     static JPEGClass jpg;
@@ -45,13 +49,32 @@ int encode_as_jpg(uint8_t *framebuffer, size_t framebuffer_size, int width, int 
     return 0;
 }
 
-int encode_bw_signal_as_jpg(signal_t *signal, int width, int height, uint8_t *out_buffer, size_t out_buffer_size, size_t *out_size) {
+int32_t jpeg_write_callback (JPEGFILE *pFile, uint8_t *pBuf, int32_t iLen) {
+    base64_encode_chunk((const char *)pBuf, iLen, ei_putchar);
+    return 0;
+}
+
+void jpeg_close_callback(JPEGFILE *pFile) {
+    base64_encode_finish(ei_putchar);
+}
+
+void* jpeg_open_callback (const char *szFilename) {
+    // file handle isn't used in the internals, just return non NULL.
+    return (void *)1;
+}
+
+static int encode_bw_signal_as_jpg_common(signal_t *signal, int width, int height, uint8_t *out_buffer, size_t out_buffer_size, size_t *out_size, bool output_directly) {
     static JPEGClass jpg;
     JPEGENCODE jpe;
     float *encode_buffer = NULL;
     uint8_t *encode_buffer_u8 = NULL;
 
-    int rc = jpg.open(out_buffer, out_buffer_size);
+    int rc;
+    if (output_directly) {
+        rc = jpg.open("image.jpg", jpeg_open_callback, jpeg_close_callback, NULL, jpeg_write_callback, NULL);
+    } else {
+        rc = jpg.open(out_buffer, out_buffer_size);
+    }
     if (rc != JPEG_SUCCESS) {
         return rc;
     }
@@ -72,12 +95,12 @@ int encode_bw_signal_as_jpg(signal_t *signal, int width, int height, uint8_t *ou
     int last_offset = 0;
     int max_offset_diff = 0;
 
-    encode_buffer = (float*)malloc(buf_len * 4);
+    encode_buffer = (float*)ei_malloc(buf_len * 4);
     if (!encode_buffer) {
         rc = JPEG_MEM_ERROR;
         goto cleanup;
     }
-    encode_buffer_u8 = (uint8_t*)malloc(buf_len * bytePp);
+    encode_buffer_u8 = (uint8_t*)ei_malloc(buf_len * bytePp);
     if (!encode_buffer_u8) {
         rc = JPEG_MEM_ERROR;
         goto cleanup;
@@ -88,9 +111,7 @@ int encode_bw_signal_as_jpg(signal_t *signal, int width, int height, uint8_t *ou
         // the JPEGENCODE structure is updated by addMCU() after
         // each call
 
-        // pixel offset
-        int offset = jpe.x  + (jpe.y * width);
-
+        int offset = jpe.x + (jpe.y * width);
         rc = signal->get_data(offset, buf_len, encode_buffer);
         if (rc != 0) {
             goto cleanup;
@@ -117,21 +138,38 @@ int encode_bw_signal_as_jpg(signal_t *signal, int width, int height, uint8_t *ou
     rc = JPEG_SUCCESS;
 
 cleanup:
-    *out_size = jpg.close();
+    if (output_directly)
+        jpg.close();
+    else
+        *out_size = jpg.close();
 
-    ei_free(encode_buffer);
-    ei_free(encode_buffer_u8);
+    if (encode_buffer) ei_free(encode_buffer);
+    if (encode_buffer_u8) ei_free(encode_buffer_u8);
 
     return rc;
 }
 
-int encode_rgb888_signal_as_jpg(signal_t *signal, int width, int height, uint8_t *out_buffer, size_t out_buffer_size, size_t *out_size) {
+int encode_bw_signal_as_jpg(signal_t *signal, int width, int height, uint8_t *out_buffer, size_t out_buffer_size, size_t *out_size) {
+    return encode_bw_signal_as_jpg_common(signal, width, height, out_buffer, out_buffer_size, out_size, false);
+}
+
+int encode_bw_signal_as_jpg_and_output_base64(signal_t *signal, int width, int height) {
+    return encode_bw_signal_as_jpg_common(signal, width, height, NULL, 0, NULL, true);
+}
+
+
+static int encode_rgb888_signal_as_jpg_common(signal_t *signal, int width, int height, uint8_t *out_buffer, size_t out_buffer_size, size_t *out_size, bool output_directly) {
     static JPEGClass jpg;
     JPEGENCODE jpe;
     float *encode_buffer = NULL;
     uint8_t *encode_buffer_u8 = NULL;
 
-    int rc = jpg.open(out_buffer, out_buffer_size);
+    int rc;
+    if (output_directly) {
+        rc = jpg.open("image.jpg", jpeg_open_callback, jpeg_close_callback, NULL, jpeg_write_callback, NULL);
+    } else {
+        rc = jpg.open(out_buffer, out_buffer_size);
+    }
     if (rc != JPEG_SUCCESS) {
         return rc;
     }
@@ -153,13 +191,13 @@ int encode_rgb888_signal_as_jpg(signal_t *signal, int width, int height, uint8_t
     int max_offset_diff = 0;
 
     // encode_buffer in 4 BPP (float32)
-    encode_buffer = (float*)malloc(buf_len * 4);
+    encode_buffer = (float*)ei_malloc(buf_len * 4);
     if (!encode_buffer) {
         rc = JPEG_MEM_ERROR;
         goto cleanup;
     }
     //encode_buffer_u8 in 3 BPP
-    encode_buffer_u8 = (uint8_t*)malloc(buf_len * bytePp);
+    encode_buffer_u8 = (uint8_t*)ei_malloc(buf_len * bytePp);
     if (!encode_buffer_u8) {
         rc = JPEG_MEM_ERROR;
         goto cleanup;
@@ -207,21 +245,37 @@ int encode_rgb888_signal_as_jpg(signal_t *signal, int width, int height, uint8_t
     rc = JPEG_SUCCESS;
 
 cleanup:
-    *out_size = jpg.close();
+    if (output_directly)
+        jpg.close();
+    else
+        *out_size = jpg.close();
 
-    ei_free(encode_buffer);
-    ei_free(encode_buffer_u8);
+    if (encode_buffer) ei_free(encode_buffer);
+    if (encode_buffer_u8) ei_free(encode_buffer_u8);
 
     return rc;
 }
 
-int encode_rgb565_signal_as_jpg(signal_t *signal, int width, int height, uint8_t *out_buffer, size_t out_buffer_size, size_t *out_size) {
+int encode_rgb888_signal_as_jpg(signal_t *signal, int width, int height, uint8_t *out_buffer, size_t out_buffer_size, size_t *out_size) {
+    return encode_rgb888_signal_as_jpg_common(signal, width, height, out_buffer, out_buffer_size, out_size, false);
+}
+
+int encode_rgb888_signal_as_jpg_and_output_base64(signal_t *signal, int width, int height) {
+    return encode_rgb888_signal_as_jpg_common(signal, width, height, NULL, 0, NULL, true);
+}
+
+static int encode_rgb565_signal_as_jpg_common(signal_t *signal, int width, int height, uint8_t *out_buffer, size_t out_buffer_size, size_t *out_size, bool output_directly) {
     static JPEGClass jpg;
     JPEGENCODE jpe;
     float *encode_buffer = NULL;
     uint8_t *encode_buffer_u8 = NULL;
 
-    int rc = jpg.open(out_buffer, out_buffer_size);
+    int rc;
+    if (output_directly) {
+        rc = jpg.open("image.jpg", jpeg_open_callback, jpeg_close_callback, NULL, jpeg_write_callback, NULL);
+    } else {
+        rc = jpg.open(out_buffer, out_buffer_size);
+    }
     if (rc != JPEG_SUCCESS) {
         return rc;
     }
@@ -243,13 +297,13 @@ int encode_rgb565_signal_as_jpg(signal_t *signal, int width, int height, uint8_t
     int max_offset_diff = 0;
 
     // encode_buffer in 4 BPP (float32)
-    encode_buffer = (float*)malloc(buf_len * 4);
+    encode_buffer = (float*)ei_malloc(buf_len * 4);
     if (!encode_buffer) {
         rc = JPEG_MEM_ERROR;
         goto cleanup;
     }
     //encode_buffer_u8 in 2 BPP
-    encode_buffer_u8 = (uint8_t*)malloc(buf_len * bytePp);
+    encode_buffer_u8 = (uint8_t*)ei_malloc(buf_len * bytePp);
     if (!encode_buffer_u8) {
         rc = JPEG_MEM_ERROR;
         goto cleanup;
@@ -300,12 +354,24 @@ int encode_rgb565_signal_as_jpg(signal_t *signal, int width, int height, uint8_t
     rc = JPEG_SUCCESS;
 
 cleanup:
-    *out_size = jpg.close();
+    if (output_directly)
+        jpg.close();
+    else
+        *out_size = jpg.close();
 
-    ei_free(encode_buffer);
-    ei_free(encode_buffer_u8);
+    if (encode_buffer) ei_free(encode_buffer);
+    if (encode_buffer_u8) ei_free(encode_buffer_u8);
 
     return rc;
 }
+
+int encode_rgb565_signal_as_jpg(signal_t *signal, int width, int height, uint8_t *out_buffer, size_t out_buffer_size, size_t *out_size) {
+    return encode_rgb565_signal_as_jpg_common(signal, width, height, out_buffer, out_buffer_size, out_size, false);
+}
+
+int encode_rgb565_signal_as_jpg_and_output_base64(signal_t *signal, int width, int height) {
+    return encode_rgb565_signal_as_jpg_common(signal, width, height, NULL, 0, NULL, true);
+}
+
 
 #endif // ENCODE_AS_JPG_H

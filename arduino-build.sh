@@ -34,6 +34,45 @@ CLI_MAJOR=$($ARDUINO_CLI version | cut -d. -f1 | rev | cut -d ' '  -f1)
 CLI_MINOR=$($ARDUINO_CLI version | cut -d. -f2)
 CLI_REV=$($ARDUINO_CLI version | cut -d. -f3 | cut -d ' '  -f1)
 
+################################ Parse args ###################################
+OPT_BUILD=0
+OPT_FLASH=0
+OPT_SKIP_DEPENDENCY_CHECK=0
+
+POSITIONAL_ARGS=()
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --build)
+      OPT_BUILD=1
+      shift # past argument
+      ;;
+    --flash)
+      OPT_FLASH=1
+      shift # past argument
+      ;;
+    --all)
+      OPT_BUILD=1
+      OPT_FLASH=1
+      shift # past argument
+      ;;
+    --skip-dependency-check)
+      OPT_SKIP_DEPENDENCY_CHECK=1
+      shift # past argument
+      ;;
+    -*|--*)
+      echo "Unknown option $1"
+      exit 1
+      ;;
+    *)
+      POSITIONAL_ARGS+=("$1") # save positional arg
+      shift # past argument
+      ;;
+  esac
+done
+
+set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
+
 ################################ Helper Funcs #################################
 
 # parses Arduino CLI's (core list and lib list) output and returns the installed version.
@@ -130,7 +169,7 @@ check_dependency()
     echo ""
 
     lib_update=""
-    for lib in ${ARDUINO_LIBS[@]}; do
+    for lib in "${ARDUINO_LIBS[@]}"; do
         key=$(array_get_key "${lib}")
         value=$(array_get_value "$lib")
         has_arduino_lib="$(find_arduino_lib "${key}" "${value}")"
@@ -165,7 +204,6 @@ fi
 
 INCLUDE="-I ./src"
 INCLUDE+=" -I./src/model-parameters"
-INCLUDE+=" -I ./src/repl"
 INCLUDE+=" -I ./src/ingestion-sdk-c/"
 INCLUDE+=" -I ./src/ingestion-sdk-c/inc"
 INCLUDE+=" -I ./src/ingestion-sdk-c/inc/signing"
@@ -185,11 +223,13 @@ FLAGS+=" -DEI_SENSOR_AQ_STREAM=FILE"
 FLAGS+=" -DEIDSP_QUANTIZE_FILTERBANK=0"
 FLAGS+=" -DEI_CLASSIFIER_SLICES_PER_MODEL_WINDOW=3"
 FLAGS+=" -mfpu=fpv4-sp-d16"
+#FLAGS+=" -DEI_CLASSIFIER_ALLOCATION_STATIC" # heap suffers from fragmentation, statically allocating helps
 
-if [ "$COMMAND" = "--build" ];
-then
+if [ "$OPT_BUILD" -eq 1 ]; then
     echo "Building $PROJECT"
-    check_dependency
+    if [ "$OPT_SKIP_DEPENDENCY_CHECK" -ne 1 ]; then
+        check_dependency
+    fi
     $ARDUINO_CLI compile --fqbn  $BOARD $BUILD_PROPERTIES_FLAG build.extra_flags="$INCLUDE $FLAGS" --output-dir . &
     pid=$! # Process Id of the previous running command
     while kill -0 $pid 2>/dev/null
@@ -204,14 +244,8 @@ then
     else
         exit "Building $PROJECT failed"
     fi
-elif [ "$COMMAND" = "--flash" ];
-then
+fi
+
+if [ "$OPT_FLASH" -eq 1 ]; then
     $ARDUINO_CLI upload -p $($ARDUINO_CLI board list | grep Arduino | cut -d ' ' -f1) --fqbn $BOARD --input-dir .
-elif [ "$COMMAND" = "--all" ];
-then
-    $ARDUINO_CLI compile --fqbn  $BOARD $BUILD_PROPERTIES_FLAG build.extra_flags="$INCLUDE $FLAGS"
-    status=$?
-    [ $status -eq 0 ] && $ARDUINO_CLI upload -p $($ARDUINO_CLI board list | grep Arduino | cut -d ' ' -f1) --fqbn $BOARD --input-dir .
-else
-    echo "Nothing to do for target"
 fi

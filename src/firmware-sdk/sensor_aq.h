@@ -1,5 +1,5 @@
-/* Edge Impulse ingestion SDK
- * Copyright (c) 2020 EdgeImpulse Inc.
+/* Edge Impulse firmware SDK
+ * Copyright (c) 2022 EdgeImpulse Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,12 +20,12 @@
  * SOFTWARE.
  */
 
-#ifndef _EDGE_IMPULSE_SENSOR_AQ_H_
-#define _EDGE_IMPULSE_SENSOR_AQ_H_
+#ifndef EI_SENSOR_AQ_H
+#define EI_SENSOR_AQ_H
 
 
 /* Include ----------------------------------------------------------------- */
-#include "qcbor.h"
+#include "QCBOR/inc/qcbor.h"
 #include <stdio.h>
 
 // detect POSIX, and use FILE* in that case
@@ -33,7 +33,9 @@
 #include <time.h>
 #define EI_SENSOR_AQ_STREAM     FILE
 #elif !defined(EI_SENSOR_AQ_STREAM)
-#error "EI_SENSOR_AQ_STREAM not defined, and not on POSIX system. Please specify the EI_SENSOR_AQ_STREAM macro"
+// most targets don't need a file handle
+typedef void* nothing_t;
+#define EI_SENSOR_AQ_STREAM nothing_t
 #endif
 
 #ifdef __MBED__
@@ -194,4 +196,4 @@ int sensor_aq_add_data_i16(sensor_aq_ctx *ctx, int16_t values[], size_t values_s
 int sensor_aq_add_data_batch(sensor_aq_ctx *ctx, int16_t values[], size_t values_size);
 int sensor_aq_finish(sensor_aq_ctx *ctx);
 
-#endif // _EDGE_IMPULSE_SENSOR_AQ_H_
+#endif /* EI_SENSOR_AQ_H */

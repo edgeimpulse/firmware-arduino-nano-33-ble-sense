@@ -1,5 +1,5 @@
-/* Edge Impulse inferencing library
- * Copyright (c) 2020 EdgeImpulse Inc.
+/* Edge Impulse firmware SDK
+ * Copyright (c) 2022 EdgeImpulse Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,12 +20,8 @@
  * SOFTWARE.
  */
 
-#ifndef __EI_DEVICE_INTERFACE__H__
-#define __EI_DEVICE_INTERFACE__H__
-
-
-// also grab everything for classifying
-#include "edge-impulse-sdk/porting/ei_classifier_porting.h"
+#ifndef EI_DEVICE_INTERFACE_H
+#define EI_DEVICE_INTERFACE_H
 
 /* Function prototypes ----------------------------------------------------- */
 //TODO: remove as it is device specific and wil be superseded by AT Server
@@ -44,4 +40,4 @@ void ei_putc(char cChar);
 char ei_getchar();
 
 
-#endif  //!__EI_DEVICE_INTERFACE__H__
+#endif /* EI_DEVICE_INTERFACE_H */

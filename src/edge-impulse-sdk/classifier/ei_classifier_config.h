@@ -24,6 +24,10 @@
 #define _EI_CLASSIFIER_CONFIG_H_
 
 // clang-format off
+#if EI_CLASSIFIER_TFLITE_ENABLE_SILABS_MVP == 1
+    #define EI_CLASSIFIER_TFLITE_ENABLE_CMSIS_NN      0
+#endif
+
 #ifndef EI_CLASSIFIER_TFLITE_ENABLE_CMSIS_NN
 #if defined(__MBED__)
     #include "mbed.h"
@@ -63,6 +67,12 @@
 #define EI_CLASSIFIER_TFLITE_ENABLE_ARC             0
 #endif // CPU_ARC
 #endif // EI_CLASSIFIER_TFLITE_ENABLE_ARC
+
+#ifndef EI_CLASSIFIER_TFLITE_ENABLE_ESP_NN
+    #if defined(ESP32)
+        #define EI_CLASSIFIER_TFLITE_ENABLE_ESP_NN      1
+    #endif // ESP32 check
+#endif
 
 // clang-format on
 #endif // _EI_CLASSIFIER_CONFIG_H_

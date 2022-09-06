@@ -1,5 +1,5 @@
-/* Edge Impulse ingestion SDK
- * Copyright (c) 2020 EdgeImpulse Inc.
+/* Edge Impulse firmware SDK
+ * Copyright (c) 2022 EdgeImpulse Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,13 +20,15 @@
  * SOFTWARE.
  */
 
-#ifndef _EI_FUSION_H
-#define _EI_FUSION_H
+#ifndef EI_FUSION_H
+#define EI_FUSION_H
 
 /* Include ----------------------------------------------------------------- */
 #include "ei_config_types.h"
 #include "ei_fusion_sensors_config.h"
 #include "sensor_aq.h"
+#include <string>
+#include <vector>
 
 #define EI_MAX_FREQUENCIES 5
 
@@ -56,12 +58,31 @@ typedef struct {
     int axis_flag_used;
 } ei_device_fusion_sensor_t;
 
+typedef struct {
+    std::string name;
+    unsigned int max_sample_length;
+    std::vector<float> frequencies;
+} fused_sensors_t;
+
 /* Function prototypes ----------------------------------------------------- */
 bool ei_add_sensor_to_fusion_list(ei_device_fusion_sensor_t sensor);
+
+/**
+ * @brief Function combines all sensors AND prints results using ei_printf
+ * 
+ */
 void ei_built_sensor_fusion_list(void);
+
+/**
+ * @brief Function combines all sensors AND returns const reference to list as a result
+ * 
+ * @return const std::vector<fused_sensors_t>& 
+ */
+const std::vector<fused_sensors_t> &ei_get_sensor_fusion_list(void);
+
 bool ei_connect_fusion_list(const char *input_list, ei_fusion_list_format format);
 void ei_fusion_read_axis_data(void);
 bool ei_fusion_sample_start(sampler_callback callsampler, float sample_interval_ms);
-bool ei_fusion_setup_data_sampling();
+bool ei_fusion_setup_data_sampling(void);
 
-#endif
+#endif /* EI_FUSION_H */

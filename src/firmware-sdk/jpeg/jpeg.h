@@ -1814,9 +1814,16 @@ int JPEGAddMCU(JPEGIMAGE *pJPEG, JPEGENCODE *pEncode, uint8_t *pPixels, int iPit
             return JPEG_NO_BUFFER;
         } else { // write current block of data
             int iLen = (int)(pJPEG->pc.pOut - pJPEG->ucFileBuf);
+            int len_diff = iLen & 0x3;
+            iLen -= len_diff;
             pJPEG->pfnWrite(&pJPEG->JPEGFile, pJPEG->ucFileBuf, iLen);
             pJPEG->iDataSize += iLen;
+
+            unsigned char *ptr = pJPEG->pc.pOut;
             pJPEG->pc.pOut = pJPEG->ucFileBuf;
+            for (int i = 0; i < len_diff; i++) {
+                *pJPEG->pc.pOut++ = pJPEG->ucFileBuf[iLen + i];
+            }
         }
     }
     return JPEG_SUCCESS;

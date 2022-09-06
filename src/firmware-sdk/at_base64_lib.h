@@ -1,5 +1,5 @@
-#ifndef _EDGE_IMPULSE_SDK_BASE64_H_
-#define _EDGE_IMPULSE_SDK_BASE64_H_
+#ifndef EI_AT_BASE64_LIB_H
+#define EI_AT_BASE64_LIB_H
 
 /*
    base64.cpp and base64.h
@@ -28,14 +28,12 @@
 
 */
 
-/* Include ----------------------------------------------------------------- */
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
+#include <cstdlib>
 
 /* Function prototypes ----------------------------------------------------- */
 void base64_encode(const char *input, size_t input_size, void (*putc_f)(char));
+void base64_encode_chunk(const char *input, size_t input_size, void (*putc_f)(char));
+void base64_encode_finish(void (*putc_f)(char));
 int base64_encode_buffer(const char *input, size_t input_size, char *output, size_t output_size);
 
-#endif
+#endif /* EI_AT_BASE64_LIB_H */

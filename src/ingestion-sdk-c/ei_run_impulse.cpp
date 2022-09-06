@@ -33,102 +33,7 @@
 #include "firmware-sdk/jpeg/encode_as_jpg.h"
 
 
-#if defined(EI_CLASSIFIER_SENSOR) && EI_CLASSIFIER_SENSOR == EI_CLASSIFIER_SENSOR_ACCELEROMETER
-
-static float acc_buf[N_AXIS_SAMPLED];
-static int acc_ready = 0;
-
-static bool acc_data_callback(const void *sample_buf, uint32_t byteLenght)
-{
-    float *buffer = (float *)sample_buf;
-    for (int i = 0; i < (byteLenght / sizeof(float)); i++) {
-        acc_buf[i] = buffer[i];
-    }
-
-    if (acc_ready == 1) {
-        acc_ready = 0;
-        return true;
-    } else
-        return false;
-}
-
-static void acc_read_data(float *values, size_t value_size)
-{
-    for (int i = 0; i < value_size; i++) {
-        values[i] = acc_buf[i];
-    }
-}
-
-void run_nn(bool debug, int delay_ms, bool use_max_baudrate) {
-
-    bool stop_inferencing = false;
-    // summary of inferencing settings (from model_metadata.h)
-    ei_printf("Inferencing settings:\n");
-    ei_printf("\tInterval: %.2f ms.\n", (float)EI_CLASSIFIER_INTERVAL_MS);
-    ei_printf("\tFrame size: %d\n", EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE);
-    ei_printf("\tSample length: %.0f ms.\n",
-              1000.0f * static_cast<float>(EI_CLASSIFIER_RAW_SAMPLE_COUNT) /
-                  (1000.0f / static_cast<float>(EI_CLASSIFIER_INTERVAL_MS)));
-    ei_printf("\tNo. of classes: %d\n", sizeof(ei_classifier_inferencing_categories) /
-                                            sizeof(ei_classifier_inferencing_categories[0]));
-
-    ei_printf("Starting inferencing, press 'b' to break\n");
-
-    while (stop_inferencing == false) {
-        if (delay_ms != 0) {
-            ei_printf("Starting inferencing in %d seconds...\n", delay_ms / 1000);
-
-            // instead of wait_ms, we'll wait on the signal, this allows threads to cancel us...
-            if (ei_sleep(delay_ms) != EI_IMPULSE_OK) {
-                break;
-            }
-        }
-
-        while (ei_get_serial_available() > 0) {
-            if (ei_get_serial_byte() == 'b') {
-                ei_printf("Inferencing stopped by user\r\n");
-                stop_inferencing = true;
-            }
-        }
-
-        if (stop_inferencing) {
-            break;
-        }
-
-        ei_printf("Sampling...\n");
-
-        ei_inertial_sample_start(&acc_data_callback, EI_CLASSIFIER_INTERVAL_MS);
-
-        // run the impulse: DSP, neural network and the Anomaly algorithm
-        ei_impulse_result_t result = {0};
-        EI_IMPULSE_ERROR err = run_impulse(&result, &acc_read_data, debug);
-        if (err != EI_IMPULSE_OK) {
-            ei_printf("Failed to run impulse (%d)\n", err);
-            break;
-        }
-
-        acc_ready = 1;
-
-        // print the predictions
-        ei_printf("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
-                  result.timing.dsp, result.timing.classification, result.timing.anomaly);
-        for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
-            ei_printf("    %s: %.5f\n", result.classification[ix].label,
-                      result.classification[ix].value);
-        }
-#if EI_CLASSIFIER_HAS_ANOMALY == 1
-        ei_printf("    anomaly score: %.3f\n", result.anomaly);
-#endif
-
-        while (ei_get_serial_available() > 0) {
-            if (ei_get_serial_byte() == 'b') {
-                ei_printf("Inferencing stopped by user\r\n");
-                stop_inferencing = true;
-            }
-        }
-    }
-}
-#elif defined(EI_CLASSIFIER_SENSOR) && EI_CLASSIFIER_SENSOR == EI_CLASSIFIER_SENSOR_MICROPHONE
+#if defined(EI_CLASSIFIER_SENSOR) && (EI_CLASSIFIER_SENSOR == EI_CLASSIFIER_SENSOR_MICROPHONE)
 void run_nn(bool debug, int delay_ms, bool use_max_baudrate) {
 
     if (EI_CLASSIFIER_FREQUENCY > 16000) {
@@ -269,12 +174,26 @@ void run_nn_continuous(bool debug)
         }
 
         if (++print_results >= (EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW >> 1)) {
-            // print the predictions
-            ei_printf("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
-                      result.timing.dsp, result.timing.classification, result.timing.anomaly);
-            for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
-                ei_printf("    %s: %.5f\n", result.classification[ix].label,
-                          result.classification[ix].value);
+
+            if(result.label_detected >= 0) {
+                ei_printf("LABEL DETECTED : %s\r\n", result.classification[result.label_detected].label);
+
+                // print the predictions
+                ei_printf("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
+                        result.timing.dsp, result.timing.classification, result.timing.anomaly);
+                for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
+                    ei_printf("    %s: %.5f\n", result.classification[ix].label,
+                            result.classification[ix].value);
+                }
+            }
+            else {
+                const char spinner[] = {'/', '-', '\\', '|'};
+                static char spin = 0;
+                ei_printf("Running inference %c\r", spinner[spin]);
+
+                if(++spin >= sizeof(spinner)) {
+                    spin = 0;
+                }
             }
 #if EI_CLASSIFIER_HAS_ANOMALY == 1
             ei_printf("    anomaly score: %.3f\n", result.anomaly);
@@ -292,9 +211,11 @@ void run_nn_continuous(bool debug)
     }
 
     ei_microphone_inference_end();
+    run_classifier_deinit();
+
 }
 
-#elif defined(EI_CLASSIFIER_SENSOR) && EI_CLASSIFIER_SENSOR == EI_CLASSIFIER_SENSOR_FUSION
+#elif defined(EI_CLASSIFIER_SENSOR) && ((EI_CLASSIFIER_SENSOR == EI_CLASSIFIER_SENSOR_FUSION) || (EI_CLASSIFIER_SENSOR == EI_CLASSIFIER_SENSOR_ACCELEROMETER))
 
 static float fusion_buf[NUM_MAX_FUSION_AXIS];
 static int fusion_ready = 0;
@@ -322,6 +243,7 @@ static void fusion_read_data(float *values, size_t value_size)
 
 void run_nn(bool debug, int delay_ms, bool use_max_baudrate) {
 
+    //char *axis_name = EI_CLASSIFIER_FUSION_AXES_STRING;
     char *axis_name = EI_CLASSIFIER_FUSION_AXES_STRING;
     if (!ei_connect_fusion_list(axis_name, AXIS_FORMAT)) {
         ei_printf("Failed to find sensor '%s' in the sensor list\n", axis_name);
@@ -396,7 +318,7 @@ void run_nn(bool debug, int delay_ms, bool use_max_baudrate) {
     }
 }
 
-#elif defined(EI_CLASSIFIER_SENSOR) && EI_CLASSIFIER_SENSOR == EI_CLASSIFIER_SENSOR_CAMERA
+#elif defined(EI_CLASSIFIER_SENSOR) && (EI_CLASSIFIER_SENSOR == EI_CLASSIFIER_SENSOR_CAMERA)
 
 #define DWORD_ALIGN_PTR(a)   ((a & 0x3) ?(((uintptr_t)a + 0x4) & ~(uintptr_t)0x3) : a)
 
@@ -455,38 +377,6 @@ void run_nn(bool debug, int delay_ms, bool use_max_baudrate) {
         signal.total_length = EI_CLASSIFIER_INPUT_WIDTH * EI_CLASSIFIER_INPUT_HEIGHT;
         signal.get_data = &ei_camera_cutout_get_data;
 
-        // Print framebuffer as JPG during debugging
-        if (debug) {
-
-            size_t jpeg_buffer_size = EI_CLASSIFIER_INPUT_WIDTH * EI_CLASSIFIER_INPUT_HEIGHT >= 128 * 128 ?
-                8192 * 2:
-                4096 * 2;
-            uint8_t *jpeg_buffer = NULL;
-            jpeg_buffer = (uint8_t*)ei_malloc(jpeg_buffer_size);
-            if (!jpeg_buffer) {
-                ei_printf("ERR: Failed to allocate JPG buffer\r\n");
-                return;
-            }
-
-            ei_printf("Begin output\n");
-
-            size_t out_size;
-            int x = encode_rgb565_signal_as_jpg(&signal, EI_CLASSIFIER_INPUT_WIDTH, EI_CLASSIFIER_INPUT_HEIGHT, jpeg_buffer, jpeg_buffer_size, &out_size);
-            if (x != 0) {
-                ei_printf("Failed to encode frame as JPEG (%d)\n", x);
-                break;
-            }
-
-            ei_printf("Framebuffer: ");
-            base64_encode((const char*)jpeg_buffer, out_size, &ei_putchar);
-            ei_printf("\r\n");
-
-            if (jpeg_buffer) {
-                ei_free(jpeg_buffer);
-            }
-        }
-
-
         // run the impulse: DSP, neural network and the Anomaly algorithm
         ei_impulse_result_t result = { 0 };
 
@@ -497,12 +387,28 @@ void run_nn(bool debug, int delay_ms, bool use_max_baudrate) {
             break;
         }
 
+        // Print framebuffer as JPG during debugging
+        if (debug) {
+
+            ei_printf("Begin output\n");
+            ei_printf("Framebuffer: ");
+
+            size_t out_size;
+            int x = encode_rgb565_signal_as_jpg_and_output_base64(&signal, EI_CLASSIFIER_INPUT_WIDTH, EI_CLASSIFIER_INPUT_HEIGHT);
+            if (x != 0) {
+                ei_printf("Failed to encode frame as JPEG (%d)\n", x);
+                break;
+            }
+
+            ei_printf("\r\n");
+        }
+
         // print the predictions
         ei_printf("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
                   result.timing.dsp, result.timing.classification, result.timing.anomaly);
 #if EI_CLASSIFIER_OBJECT_DETECTION == 1
         bool bb_found = result.bounding_boxes[0].value > 0;
-        for (size_t ix = 0; ix < EI_CLASSIFIER_OBJECT_DETECTION_COUNT; ix++) {
+        for (size_t ix = 0; ix < result.bounding_boxes_count; ix++) {
             auto bb = result.bounding_boxes[ix];
             if (bb.value == 0) {
                 continue;
@@ -561,7 +467,7 @@ void run_nn_normal(void) {
     run_nn(false, 2000, false);
 }
 
-void run_nn_debug(char *baudrate_s) {
+void run_nn_debug(const char *baudrate_s) {
 
     bool use_max_baudrate = false;
     if (baudrate_s[0] == 'y') {

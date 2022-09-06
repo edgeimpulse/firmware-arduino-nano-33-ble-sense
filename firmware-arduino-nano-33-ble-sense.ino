@@ -21,25 +21,20 @@
  */
 
 /* Include ----------------------------------------------------------------- */
-#include "mbed.h"
 #include "src/setup.h"
 
-
-/* Private variables ------------------------------------------------------- */
-static rtos::Thread mbed_thread(osPriorityAboveNormal, 8 * 1024);
-
 /* Public functions -------------------------------------------------------- */
-
 void setup() {
 
     Serial.begin(115200);
 
-    ei_main();
+    // wait for serial port to connect. Needed for native USB
+    while(!Serial);
 
-    mbed_thread.start(&ei_main);
+    // init all sensors and device itself
+    ei_main_init();
 }
 
 void loop() {
-    // delay will pause the thread, so the loop won't take any cycles away from us here
-    delay(10000);
+    ei_main();
 }

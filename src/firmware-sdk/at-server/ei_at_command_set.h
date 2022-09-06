@@ -1,12 +1,7 @@
 #ifndef AT_COMMAND_SET_H
 #define AT_COMMAND_SET_H
 
-/**
- * @brief Default list of AT commands
- * VERSION: 1.6.0
- */
-
-#define AT_COMMAND_VERSION "1.6.0"
+#define AT_COMMAND_VERSION "1.7.0"
 
 /*************************************************************************************************/
 /* mandatory commands required by Edge Impulse CLI Tools*/
@@ -44,7 +39,8 @@
 #define AT_RUNIMPULSE                "RUNIMPULSE"
 #define AT_RUNIMPULSE_HELP_TEXT      "Run the impulse"
 #define AT_RUNIMPULSEDEBUG           "RUNIMPULSEDEBUG"
-#define AT_RUNIMPULSEDEBUG_HELP_TEXT "Run the impulse with extra debug output"
+#define AT_RUNIMPULSEDEBUG_ARGS      "USEMAXRATE"
+#define AT_RUNIMPULSEDEBUG_HELP_TEXT "Run the impulse with additional debug output or live preview"
 #define AT_RUNIMPULSECONT            "RUNIMPULSECONT"
 #define AT_RUNIMPULSECONT_HELP_TEXT  "Run the impulse continuously"
 

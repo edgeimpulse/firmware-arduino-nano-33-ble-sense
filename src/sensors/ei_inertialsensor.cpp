@@ -21,13 +21,13 @@
  */
 
 /* Include ----------------------------------------------------------------- */
+#include "edge-impulse-sdk/porting/ei_classifier_porting.h"
 #include <stdint.h>
 #include <stdlib.h>
-
 #include "ei_inertialsensor.h"
 
 #include "ei_sampler.h"
-#include "nano_fs_commands.h"
+#include "ei_flash_nano_ble33.h"
 #include "sensor_aq.h"
 
 #include "ei_lsm9ds1.h"
@@ -41,11 +41,6 @@ using namespace events;
 
 /* Constant defines -------------------------------------------------------- */
 #define CONVERT_G_TO_MS2    9.80665f
-
-
-extern void ei_printf(const char *format, ...);
-extern ei_config_t *ei_config_get_config();
-extern EI_CONFIG_ERROR ei_config_set_sample_interval(float interval);
 
 Thread inertial_thread;
 EventQueue inertial_queue;
@@ -94,28 +89,31 @@ bool ei_inertial_sample_start(sampler_callback callsampler, float sample_interva
 
 bool ei_inertial_setup_data_sampling(void)
 {
-    if (ei_config_get_config()->sample_interval_ms < 10.0f ) {
-        ei_config_set_sample_interval(10.0f);
+    EiDeviceInfo *dev = EiDeviceInfo::get_device();
+    EiDeviceMemory *mem = dev->get_memory();
+
+    if (dev->get_sample_interval_ms() < 10.0f ) {
+        dev->set_sample_interval_ms(10.0f);
     }
 
     // Calculate number of bytes available on flash for sampling, reserve 1 block for header + overhead
-    uint32_t available_bytes = (EiDevice.filesys_get_n_available_sample_blocks()-1) * EiDevice.filesys_get_block_size();
+    uint32_t available_bytes = (mem->get_available_sample_blocks()-1) * mem->block_size;
     // Check available sample size before sampling for the selected frequency
-    uint32_t requested_bytes = ceil((ei_config_get_config()->sample_length_ms / ei_config_get_config()->sample_interval_ms) * SIZEOF_N_AXIS_SAMPLED * 2);
+    uint32_t requested_bytes = ceil((dev->get_sample_length_ms() / dev->get_sample_interval_ms()) * SIZEOF_N_AXIS_SAMPLED * 2);
     if(requested_bytes > available_bytes) {
         ei_printf("ERR: Sample length is too long. Maximum allowed is %ims at %.1fHz.\r\n", 
-            (int)floor(available_bytes / ((SIZEOF_N_AXIS_SAMPLED * 2) / ei_config_get_config()->sample_interval_ms)),
-            (1000 / ei_config_get_config()->sample_interval_ms));
+            (int)floor(available_bytes / ((SIZEOF_N_AXIS_SAMPLED * 2) / dev->get_sample_interval_ms())),
+            (1000 / dev->get_sample_interval_ms()));
         return false;
     }
 
     sensor_aq_payload_info payload = {
         // Unique device ID (optional), set this to e.g. MAC address or device EUI **if** your device has one
-        EiDevice.get_id_pointer(),
+        dev->get_device_id().c_str(),
         // Device type (required), use the same device type for similar devices
-        EiDevice.get_type_pointer(),
+        dev->get_device_type().c_str(),
         // How often new data is sampled in ms. (100Hz = every 10 ms.)
-        ei_config_get_config()->sample_interval_ms,
+        dev->get_sample_interval_ms(),
         // The axes which you'll use. The units field needs to comply to SenML units (see https://www.iana.org/assignments/senml/senml.xhtml)
         { { "accX", "m/s2" }, { "accY", "m/s2" }, { "accZ", "m/s2" }, },
     };

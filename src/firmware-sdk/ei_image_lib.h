@@ -1,5 +1,5 @@
-/* Edge Impulse inferencing library
- * Copyright (c) 2020 EdgeImpulse Inc.
+/* Edge Impulse firmware SDK
+ * Copyright (c) 2022 EdgeImpulse Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,8 +20,8 @@
  * SOFTWARE.
  */
 
-#ifndef __EI_IMAGE_LIB__H__
-#define __EI_IMAGE_LIB__H__
+#ifndef EI_IMAGE_LIB_H
+#define EI_IMAGE_LIB_H
 
 
 #include "stdint.h"
@@ -55,4 +55,4 @@ bool ei_camera_start_snapshot_stream(size_t width, size_t height, bool use_max_b
 
 
 
-#endif  //!__EI_IMAGE_LIB__H__
+#endif /* EI_IMAGE_LIB_H */

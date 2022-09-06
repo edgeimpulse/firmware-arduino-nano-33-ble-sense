@@ -40,12 +40,24 @@ uint32_t resize_row_sz;
 bool do_resize = false;
 bool do_crop = false;
 
+static ei_device_snapshot_resolutions_t resolutions[] = {
+        { .width = 160, .height = 120 },
+        { .width = 128, .height = 96 }
+    };
+
 static bool prepare_snapshot(size_t width, size_t height, bool use_max_baudrate);
 static bool take_snapshot(size_t width, size_t height, bool print_oks);
 static void finish_snapshot();
 
 void resizeImage(int srcWidth, int srcHeight, uint8_t *srcImage, int dstWidth, int dstHeight, uint8_t *dstImage, int iBpp);
 void cropImage(int srcWidth, int srcHeight, uint8_t *srcImage, int startX, int startY, int dstWidth, int dstHeight, uint8_t *dstImage, int iBpp);
+
+void get_resolutions(ei_device_snapshot_resolutions_t **res, uint8_t *res_num)
+{
+
+    *res = &resolutions[0];
+    *res_num = sizeof(resolutions) / sizeof(ei_device_snapshot_resolutions_t);
+}
 
 /**
  * @brief      Determine whether to resize and to which dimension
@@ -59,10 +71,11 @@ void cropImage(int srcWidth, int srcHeight, uint8_t *srcImage, int startX, int s
  */
 int calculate_resize_dimensions(uint32_t out_width, uint32_t out_height, uint32_t *resize_col_sz, uint32_t *resize_row_sz, bool *do_resize)
 {
-    const ei_device_resize_resolutions_t *list;
+    EiDeviceNanoBle33 *dev = static_cast<EiDeviceNanoBle33*>(EiDeviceInfo::get_device());
+    const ei_device_snapshot_resolutions_t *list;
     size_t list_size;
 
-    int dl = EiDevice.get_resize_list((const ei_device_resize_resolutions_t **)&list, &list_size);
+    int dl = dev->get_resize_list((const ei_device_snapshot_resolutions_t **)&list, &list_size);
     if (dl) { /* apparently false is OK here?! */
         ei_printf("ERR: Device has no image resize feature\n");
         return 1;
@@ -419,19 +432,11 @@ static bool take_snapshot(size_t width, size_t height, bool print_oks)
  */
 static bool verify_inputs(size_t width, size_t height)
 {
-    const ei_device_snapshot_resolutions_t *list;
-    size_t list_size;
-    const char *color_depth;
-
-    int dl = EiDevice.get_snapshot_list((const ei_device_snapshot_resolutions_t **)&list, &list_size, &color_depth);
-    if (dl) { /* apparently false is OK here?! */
-        ei_printf("ERR: Device has no snapshot feature\r\n");
-        return false;
-    }
-
+    size_t list_size = sizeof(resolutions) / sizeof(ei_device_snapshot_resolutions_t);
     bool found_res = false;
+
     for (size_t ix = 0; ix < list_size; ix++) {
-        if (list[ix].width == width && list[ix].height == height) {
+        if (resolutions[ix].width == width && resolutions[ix].height == height) {
             found_res = true;
         }
     }

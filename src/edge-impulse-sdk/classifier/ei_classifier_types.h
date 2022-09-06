@@ -52,22 +52,14 @@ typedef struct {
 
 typedef struct {
 #if EI_CLASSIFIER_OBJECT_DETECTION == 1
-    ei_impulse_result_bounding_box_t bounding_boxes[EI_CLASSIFIER_OBJECT_DETECTION_COUNT];
+    ei_impulse_result_bounding_box_t *bounding_boxes;
+    uint32_t bounding_boxes_count;
 #else
     ei_impulse_result_classification_t classification[EI_CLASSIFIER_LABEL_COUNT];
 #endif
     float anomaly;
     ei_impulse_result_timing_t timing;
+    int32_t label_detected;
 } ei_impulse_result_t;
-
-typedef struct {
-    uint32_t buf_idx;
-    float running_sum;
-#if (EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW > 1)
-    float maf_buffer[(EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW >> 1)];
-#else
-    float maf_buffer[1];
-#endif
-}ei_impulse_maf;
 
 #endif // _EDGE_IMPULSE_RUN_CLASSIFIER_TYPES_H_

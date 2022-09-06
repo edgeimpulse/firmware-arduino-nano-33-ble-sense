@@ -52,3 +52,53 @@ _Installing Arduino IDE is a requirement only for Windows users. macOS and Linux
 ## Troubleshooting
 
 * Not flashing? You can double tap the button on the board to put it in bootloader mode.
+
+* #include "UsefulBuh.h" error?
+
+    ```
+    #include "UsefulBuf.h"
+          ^~~~~~~~~~~~~
+    compilation terminated.
+    exit status 1
+    Error compiling for board Arduino Nano 33 BLE.
+    ```
+
+    Add the boards.local.txt in your Arduino IDE application folder
+
+
+* Failed to allocate TFLite arena (error code 1) / Failed to run impulse (-6)
+
+```
+
+Inferencing settings:
+	Image resolution: 96x96
+	Frame size: 9216
+	No. of classes: 1
+Taking photo...
+
+Failed to allocate TFLite arena (error code 1)
+Failed to run impulse (-6)
+```
+
+You get the above error when there's not enough (contiguous) memory to allocate TFLite arena. This can be caused by different reasons
+
+1. Heap fragmentation
+2. Not enough RAM/heap.
+
+In the case of (1) you may want to allocate the tensor arena statically by defining ` "-DEI_CLASSIFIER_ALLOCATION_STATIC"` in `arduino-build.sh` or `boards.local.txt` . If the problem still persists, then it may be that there's not enough RAM/heap for your model and this application. Currently the heap is placed in a `512`k RAM segment.
+
+* Failed to encode frame as JPEG (4)
+
+```
+
+Inferencing settings:
+        Image resolution: 96x96
+        Frame size: 9216
+        No. of classes: 1
+Taking photo...
+Begin output
+Failed to encode frame as JPEG (4)
+```
+
+There's not enough (contiguous) memory to allocate the jpeg buffer. Try increasing the `jpeg_buffer_size`. If the problem still persists this may be due
+to heap fragmentation. Try statically allocating `jpeg_buffer`.
