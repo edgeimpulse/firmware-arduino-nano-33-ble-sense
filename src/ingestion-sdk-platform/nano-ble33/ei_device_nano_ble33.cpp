@@ -30,6 +30,7 @@
 #include "mbed.h"
 #include "ei_flash_nano_ble33.h"
 #include "edge-impulse-sdk/porting/ei_classifier_porting.h"
+#include "firmware-sdk/ei_fusion.h"
 
 using namespace rtos;
 using namespace events;
@@ -57,6 +58,10 @@ typedef enum
 Thread fusion_thread;
 EventQueue fusion_queue;
 mbed::Ticker fusion_sample_rate;
+
+#if MULTI_FREQ_ENABLED == 1
+void multi_sample_thread(void);
+#endif
 
 /* Public functions -------------------------------------------------------- */
 EiDeviceNanoBle33::EiDeviceNanoBle33(EiDeviceMemory* mem)
@@ -186,6 +191,41 @@ bool EiDeviceNanoBle33::start_sample_thread(void (*sample_read_cb)(void), float 
     return true;
 }
 
+#if MULTI_FREQ_ENABLED == 1
+/**
+ * 
+ */
+bool EiDeviceNanoBle33::start_multi_sample_thread(void (*sample_multi_read_cb)(uint8_t), float* multi_sample_interval_ms, uint8_t num_fusioned)
+{
+    uint8_t i;
+    uint8_t flag = 0;
+
+    this->sample_multi_read_callback = sample_multi_read_cb;
+    this->fusioning = num_fusioned;
+    this->multi_sample_interval.clear();
+
+    for (i = 0; i < num_fusioned; i++){
+        this->multi_sample_interval.push_back(1.f/multi_sample_interval_ms[i]*1000.f);
+    }
+
+    /* to improve, we consider just a 2 sensors case for now */
+    this->sample_interval = ei_fusion_calc_multi_gcd(this->multi_sample_interval.data(), this->fusioning);
+
+    /* force first reading */
+    for (i = 0; i < this->fusioning; i++){
+            flag |= (1<<i);
+    }
+    this->sample_multi_read_callback(flag);
+
+    this->actual_timer = 0;
+
+    fusion_thread.start(callback(&fusion_queue, &EventQueue::dispatch_forever));
+    fusion_sample_rate.attach(fusion_queue.event(multi_sample_thread), (this->sample_interval/1000.0f));
+
+    return true;
+}
+#endif
+
 /**
  * @brief Stop timer of thread
  * @return true
@@ -193,8 +233,35 @@ bool EiDeviceNanoBle33::start_sample_thread(void (*sample_read_cb)(void), float 
 bool EiDeviceNanoBle33::stop_sample_thread(void)
 {
     fusion_sample_rate.detach();
+
     return true;
 }
+
+#if MULTI_FREQ_ENABLED == 1
+/**
+ * @brief Thread that handles the multi fusion sampling
+ * 
+ */
+void multi_sample_thread(void)
+{
+    EiDeviceNanoBle33 *dev = static_cast<EiDeviceNanoBle33*>(EiDeviceInfo::get_device());
+
+    uint8_t flag = 0;
+    uint8_t i = 0;
+    
+    dev->actual_timer += dev->get_sample_interval();  /* update actual time */
+
+    for (i = 0; i < dev->get_fusioning(); i++){
+        if (((uint32_t)(dev->actual_timer % (uint32_t)dev->multi_sample_interval.at(i))) == 0) {   /* check if period of sensor is a multiple of actual time*/
+            flag |= (1<<i);                                                                     /* if so, time to sample it! */
+        }
+    }
+
+    if (dev->sample_multi_read_callback != nullptr){
+        dev->sample_multi_read_callback(flag);        
+    }    
+}
+#endif
 
 /**
  * @brief      Create resolution list for resizing
@@ -245,4 +312,3 @@ int ei_get_serial_available(void) {
 char ei_get_serial_byte(void) {
     return Serial.read();
 }
-

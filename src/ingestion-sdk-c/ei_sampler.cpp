@@ -39,7 +39,8 @@ using namespace events;
 
 /* Private variables ------------------------------------------------------- */
 static uint32_t samples_required;
-static uint32_t current_sample;
+static uint32_t samples_required_increase;
+static volatile uint32_t current_sample;
 static uint32_t sample_buffer_size;
 static uint32_t headerOffset = 0;
 
@@ -126,8 +127,10 @@ bool ei_sampler_start_sampling(void *v_ptr_payload, starter_callback ei_sample_s
     ei_printf("\tFile name: /fs/%s\n", dev->get_sample_label().c_str());
 
 
-    samples_required = (uint32_t)((dev->get_sample_length_ms()) / dev->get_sample_interval_ms());
-    sample_buffer_size = samples_required * sample_size * 2;
+    samples_required = (uint32_t)((float)dev->get_sample_length_ms());
+    samples_required_increase = (uint32_t)dev->get_sample_interval_ms();
+
+    sample_buffer_size = (samples_required/samples_required_increase) * sample_size * 2;
     current_sample = 0;
 
     // Minimum delay of 2000 ms for daemon
@@ -148,13 +151,12 @@ bool ei_sampler_start_sampling(void *v_ptr_payload, starter_callback ei_sample_s
     if(create_header(payload) == false)
         return false;
 
-
+    ei_printf("Sampling...\n");
     if(ei_sample_start(&sample_data_callback, dev->get_sample_interval_ms()) == false)
         return false;
-
-	ei_printf("Sampling...\n");
+	
     while(current_sample < samples_required) {
-        ThisThread::sleep_for(10);
+        ThisThread::sleep_for(50);
     };
 
     ei_write_last_data();
@@ -275,7 +277,7 @@ static bool create_header(sensor_aq_payload_info *payload)
  */
 static void finish_and_upload(void)
 {
-    ei_printf("Done sampling, total bytes collected: %u\n", samples_required);
+    ei_printf("Done sampling, total bytes collected: %u\n", samples_required/samples_required_increase);
     ei_printf("[1/1] Uploading file to Edge Impulse...\n");
     ei_printf("Not uploading file, not connected to WiFi. Used buffer, from=0, to=%lu.\n", write_addr + headerOffset);//sample_buffer_size + headerOffset);
     ei_printf("[1/1] Uploading file to Edge Impulse OK (took 0 ms.)\n");
@@ -292,9 +294,10 @@ static void finish_and_upload(void)
  */
 static bool sample_data_callback(const void *sample_buf, uint32_t byteLenght)
 {
-    sensor_aq_add_data(&ei_mic_ctx, (float *)sample_buf, byteLenght / sizeof(float));
+    sensor_aq_add_data(&ei_mic_ctx, (float *)sample_buf, byteLenght / sizeof(float));    
+    current_sample += samples_required_increase;
 
-    if(++current_sample > samples_required) {
+    if(current_sample > samples_required) {
         return true;
     }
     else {

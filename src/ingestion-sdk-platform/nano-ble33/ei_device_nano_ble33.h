@@ -25,6 +25,7 @@
 
 /* Include ----------------------------------------------------------------- */
 #include "ei_device_info_lib.h"
+#include "ei_fusion_sensors_config.h"
 
 /** Number of sensors used */
 #define EI_DEVICE_N_SENSORS					1
@@ -49,8 +50,12 @@ public:
 	bool get_sensor_list(const ei_device_sensor_t **sensor_list, size_t *sensor_list_size);
 	bool get_resize_list(const ei_device_snapshot_resolutions_t **resize_list, size_t *resize_list_size);
 	EiSnapshotProperties get_snapshot_list(void);
-    bool start_sample_thread(void (*sample_read_cb)(void), float sample_interval_ms);
-    bool stop_sample_thread(void);
+    bool start_sample_thread(void (*sample_read_cb)(void), float sample_interval_ms) override;
+    bool stop_sample_thread(void) override;
+
+#if MULTI_FREQ_ENABLED == 1
+	bool start_multi_sample_thread(void (*sample_multi_read_cb)(uint8_t), float* multi_sample_interval_ms, uint8_t num_fusioned) override;		
+#endif
 };
 
 #endif
