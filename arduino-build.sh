@@ -6,8 +6,8 @@ set -e
 PROJECT=firmware-arduino-nano-33-ble-sense
 
 # used for grepping
-ARDUINO_CORE="arduino:mbed"
-ARDUINO_CORE_VERSION="1.1.6"
+ARDUINO_CORE="arduino:mbed_nano"
+ARDUINO_CORE_VERSION="4.0.2"
 
 BOARD="${ARDUINO_CORE}":nano33ble
 
