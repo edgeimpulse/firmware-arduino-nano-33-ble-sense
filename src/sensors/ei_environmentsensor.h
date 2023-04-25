@@ -28,7 +28,7 @@
 #include "ei_fusion.h"
 
 /** Number of axis used and sample data format */
-#define ENVIRONMENT_AXIS_SAMPLED			3
+#define ENVIRONMENT_AXIS_SAMPLED			2
 
 /* Function prototypes ----------------------------------------------------- */
 bool ei_environment_init(void);
@@ -42,7 +42,7 @@ static const ei_device_fusion_sensor_t environment_sensor = {
     // sampling frequencies
     { 1.0f, 12.5f },
     // axis name and units payload (must be same order as read in)
-    { {"temperature", "degC"}, {"humidity", "%"}, {"pressure", "kPa"} },
+    { {"temperature", "degC"}, {"humidity", "%"} },
     // reference to read data function
     &ei_fusion_environment_read_data
 };

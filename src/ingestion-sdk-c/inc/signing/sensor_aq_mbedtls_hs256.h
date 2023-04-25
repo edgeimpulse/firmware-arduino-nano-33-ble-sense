@@ -26,18 +26,9 @@
 /**
  * HMAC SHA256 implementation using Mbed TLS
  */
-
-//#include <string.h>
-#include "sensor_aq.h"
-// #include "mbedtls/md.h"
-// #include "mbedtls/sha256.h"
-// #include "mbed_trace.h"
-// #include "ei_mbedtls_md.h"
-
-#ifdef MBEDTLS_MD_C
+#include "firmware-sdk/sensor_aq.h"
 
 typedef struct {
-    mbedtls_md_context_t md_ctx;
     char hmac_key[33];
 } sensor_aq_mbedtls_hs256_ctx_t;
 
@@ -49,11 +40,5 @@ typedef struct {
  * @param hmac_key The secret key - **NOTE: this is limited to 32 characters, the rest will be truncated**
  */
 void sensor_aq_init_mbedtls_hs256_context(sensor_aq_signing_ctx_t *aq_ctx, sensor_aq_mbedtls_hs256_ctx_t *hs_ctx, const char *hmac_key);
-
-#else
-
-#error "sensor_aq_mbedtls_hs256 loaded but Mbed TLS was not found, or MBEDTLS_MD_C was disabled"
-
-#endif // MBEDTLS_MD_C
 
 #endif // _EDGE_IMPULSE_SIGNING_MBEDTLS_HMAC_SHA256_H_

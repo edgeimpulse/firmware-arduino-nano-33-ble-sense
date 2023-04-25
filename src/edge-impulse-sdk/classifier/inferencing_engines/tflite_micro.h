@@ -122,9 +122,6 @@ static EI_IMPULSE_ERROR inference_tflite_setup(
 #else
     tflite::AllOpsResolver resolver;
 #endif
-#if defined(EI_CLASSIFIER_ENABLE_DETECTION_POSTPROCESS_OP)
-    resolver.AddCustom("TFLite_Detection_PostProcess", &post_process_op);
-#endif
 
     // Build an interpreter to run the model with.
     tflite::MicroInterpreter *interpreter = new tflite::MicroInterpreter(
