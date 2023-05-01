@@ -32,7 +32,7 @@ typedef float sample_format_t;
 #define N_AXIS_SAMPLED                      3
 #define SIZEOF_N_AXIS_SAMPLED               (sizeof(sample_format_t) * N_AXIS_SAMPLED)
 
-#define INERTIAL_AXIS_SAMPLED			    6
+#define INERTIAL_AXIS_SAMPLED			    9
 
 /* Function prototypes ----------------------------------------------------- */
 bool ei_inertial_init(void);
@@ -48,7 +48,7 @@ static const ei_device_fusion_sensor_t inertial_sensor = {
     // sampling frequencies
     { 20.0f, 62.5f, 100.0f },
     // axis name and units payload (must be same order as read in)
-    { {"accX", "m/s2"}, {"accY", "m/s2"}, {"accZ", "m/s2"}, {"gyrX", "deg/s"}, {"gyrY", "deg/s"}, {"gyrZ", "deg/s"}, {"magX", "uT"} }, 
+    { {"accX", "m/s2"}, {"accY", "m/s2"}, {"accZ", "m/s2"}, {"gyrX", "deg/s"}, {"gyrY", "deg/s"}, {"gyrZ", "deg/s"}, {"magX", "uT"}, {"magY", "uT"}, {"magZ", "uT"} },
     // reference to read data function
     &ei_fusion_inertial_read_data
 };
