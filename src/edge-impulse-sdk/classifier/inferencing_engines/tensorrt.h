@@ -94,7 +94,40 @@ EI_IMPULSE_ERROR run_nn_inference(
         }
     }
 
-    float out_data[impulse->tflite_output_features_count];
+    uint32_t out_data_size = 0;
+
+    if (impulse->object_detection) {
+        switch (impulse->object_detection_last_layer) {
+            case EI_CLASSIFIER_LAST_LAYER_FOMO: {
+                out_data_size = impulse->tflite_output_features_count;
+                break;
+            }
+            case EI_CLASSIFIER_LAST_LAYER_SSD: {
+                ei_printf("ERR: SSD models are not supported using TensorRT \n");
+                return EI_IMPULSE_UNSUPPORTED_INFERENCING_ENGINE;
+                break;
+            }
+            case EI_CLASSIFIER_LAST_LAYER_YOLOV5:
+            case EI_CLASSIFIER_LAST_LAYER_YOLOV5_V5_DRPAI: {
+                ei_printf("ERR: YOLOv5 models are not supported using TensorRT \n");
+                return EI_IMPULSE_UNSUPPORTED_INFERENCING_ENGINE;
+            }
+            default: {
+                ei_printf(
+                    "ERR: Unsupported object detection last layer (%d)\n",
+                    impulse->object_detection_last_layer);
+                return EI_IMPULSE_UNSUPPORTED_INFERENCING_ENGINE;
+            }
+        }
+    }
+    else {
+        out_data_size = impulse->label_count;
+    }
+
+    float *out_data = (float*)ei_malloc(out_data_size * sizeof(float));
+    if (out_data == nullptr) {
+        ei_printf("ERR: Cannot allocate memory for output data \n");
+    }
 
     // lazy initialize tensorRT context
     if (ei_trt_handle == nullptr) {
@@ -103,7 +136,7 @@ EI_IMPULSE_ERROR run_nn_inference(
 
     uint64_t ctx_start_us = ei_read_timer_us();
 
-    libeitrt::infer(ei_trt_handle, fmatrix->buffer, out_data, impulse->tflite_output_features_count);
+    libeitrt::infer(ei_trt_handle, fmatrix->buffer, out_data, out_data_size);
 
     uint64_t ctx_end_us = ei_read_timer_us();
 
@@ -144,6 +177,8 @@ EI_IMPULSE_ERROR run_nn_inference(
     else {
         fill_res = fill_result_struct_f32(impulse, result, out_data, debug);
     }
+
+    ei_free(out_data);
 
     if (fill_res != EI_IMPULSE_OK) {
         return fill_res;

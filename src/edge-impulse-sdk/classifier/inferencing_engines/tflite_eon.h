@@ -41,10 +41,10 @@
 static EI_IMPULSE_ERROR inference_tflite_setup(
     ei_learning_block_config_tflite_graph_t *block_config,
     uint64_t *ctx_start_us,
-    TfLiteTensor** input,
-    TfLiteTensor** output,
-    TfLiteTensor** output_labels,
-    TfLiteTensor** output_scores,
+    TfLiteTensor* input,
+    TfLiteTensor* output,
+    TfLiteTensor* output_labels,
+    TfLiteTensor* output_scores,
     ei_unique_ptr_t& p_tensor_arena) {
 
     ei_config_tflite_eon_graph_t *graph_config = (ei_config_tflite_eon_graph_t*)block_config->graph_config;
@@ -57,12 +57,26 @@ static EI_IMPULSE_ERROR inference_tflite_setup(
         return EI_IMPULSE_TFLITE_ARENA_ALLOC_FAILED;
     }
 
-    *input = graph_config->model_input(0);
-    *output = graph_config->model_output(block_config->output_data_tensor);
+    TfLiteStatus status;
+
+    status = graph_config->model_input(0, input);
+    if (status != kTfLiteOk) {
+        return EI_IMPULSE_TFLITE_ERROR;
+    }
+    status = graph_config->model_output(block_config->output_data_tensor, output);
+    if (status != kTfLiteOk) {
+        return EI_IMPULSE_TFLITE_ERROR;
+    }
 
     if (block_config->object_detection_last_layer == EI_CLASSIFIER_LAST_LAYER_SSD) {
-        *output_scores = graph_config->model_output(block_config->output_score_tensor);
-        *output_labels = graph_config->model_output(block_config->output_labels_tensor);
+        status = graph_config->model_output(block_config->output_score_tensor, output_scores);
+        if (status != kTfLiteOk) {
+            return EI_IMPULSE_TFLITE_ERROR;
+        }
+        status = graph_config->model_output(block_config->output_labels_tensor, output_labels);
+        if (status != kTfLiteOk) {
+            return EI_IMPULSE_TFLITE_ERROR;
+        }
     }
 
     return EI_IMPULSE_OK;
@@ -135,10 +149,10 @@ EI_IMPULSE_ERROR run_nn_inference_from_dsp(
     signal_t *signal,
     matrix_t *output_matrix)
 {
-    TfLiteTensor* input;
-    TfLiteTensor* output;
-    TfLiteTensor* output_scores;
-    TfLiteTensor* output_labels;
+    TfLiteTensor input;
+    TfLiteTensor output;
+    TfLiteTensor output_scores;
+    TfLiteTensor output_labels;
     uint64_t ctx_start_us = ei_read_timer_us();
     ei_unique_ptr_t p_tensor_arena(nullptr, ei_aligned_free);
     ei_config_tflite_eon_graph_t *graph_config = (ei_config_tflite_eon_graph_t*)block_config->graph_config;
@@ -156,7 +170,7 @@ EI_IMPULSE_ERROR run_nn_inference_from_dsp(
         return init_res;
     }
 
-    auto input_res = fill_input_tensor_from_signal(signal, input);
+    auto input_res = fill_input_tensor_from_signal(signal, &input);
     if (input_res != EI_IMPULSE_OK) {
         return input_res;
     }
@@ -166,7 +180,7 @@ EI_IMPULSE_ERROR run_nn_inference_from_dsp(
         return EI_IMPULSE_TFLITE_ERROR;
     }
 
-    auto output_res = fill_output_matrix_from_tensor(output, output_matrix);
+    auto output_res = fill_output_matrix_from_tensor(&output, output_matrix);
     if (output_res != EI_IMPULSE_OK) {
         return output_res;
     }
@@ -197,10 +211,10 @@ EI_IMPULSE_ERROR run_nn_inference(
     ei_learning_block_config_tflite_graph_t *block_config = (ei_learning_block_config_tflite_graph_t*)config_ptr;
     ei_config_tflite_eon_graph_t *graph_config = (ei_config_tflite_eon_graph_t*)block_config->graph_config;
 
-    TfLiteTensor* input;
-    TfLiteTensor* output;
-    TfLiteTensor* output_scores;
-    TfLiteTensor* output_labels;
+    TfLiteTensor input;
+    TfLiteTensor output;
+    TfLiteTensor output_scores;
+    TfLiteTensor output_labels;
 
     uint64_t ctx_start_us = ei_read_timer_us();
     ei_unique_ptr_t p_tensor_arena(nullptr, ei_aligned_free);
@@ -220,7 +234,7 @@ EI_IMPULSE_ERROR run_nn_inference(
 
     uint8_t* tensor_arena = static_cast<uint8_t*>(p_tensor_arena.get());
 
-    auto input_res = fill_input_tensor_from_matrix(fmatrix, input);
+    auto input_res = fill_input_tensor_from_matrix(fmatrix, &input);
     if (input_res != EI_IMPULSE_OK) {
         return input_res;
     }
@@ -229,9 +243,9 @@ EI_IMPULSE_ERROR run_nn_inference(
         impulse,
         graph_config,
         ctx_start_us,
-        output,
-        output_labels,
-        output_scores,
+        &output,
+        &output_labels,
+        &output_scores,
         tensor_arena, result, debug);
 
     result->timing.classification_us = ei_read_timer_us() - ctx_start_us;
@@ -262,10 +276,10 @@ EI_IMPULSE_ERROR run_nn_inference_image_quantized(
     memset(result, 0, sizeof(ei_impulse_result_t));
 
     uint64_t ctx_start_us;
-    TfLiteTensor* input;
-    TfLiteTensor* output;
-    TfLiteTensor* output_scores;
-    TfLiteTensor* output_labels;
+    TfLiteTensor input;
+    TfLiteTensor output;
+    TfLiteTensor output_scores;
+    TfLiteTensor output_labels;
 
     ei_unique_ptr_t p_tensor_arena(nullptr, ei_aligned_free);
 
@@ -281,17 +295,17 @@ EI_IMPULSE_ERROR run_nn_inference_image_quantized(
         return init_res;
     }
 
-    if (input->type != TfLiteType::kTfLiteInt8 && input->type != TfLiteType::kTfLiteUInt8) {
+    if (input.type != TfLiteType::kTfLiteInt8 && input.type != TfLiteType::kTfLiteUInt8) {
         return EI_IMPULSE_ONLY_SUPPORTED_FOR_IMAGES;
     }
 
     uint64_t dsp_start_us = ei_read_timer_us();
 
     // features matrix maps around the input tensor to not allocate any memory
-    ei::matrix_i8_t features_matrix(1, impulse->nn_input_frame_size, input->data.int8);
+    ei::matrix_i8_t features_matrix(1, impulse->nn_input_frame_size, input.data.int8);
 
     // run DSP process and quantize automatically
-    int ret = extract_image_features_quantized(signal, &features_matrix, ei_dsp_blocks[0].config, input->params.scale, input->params.zero_point, impulse->frequency);
+    int ret = extract_image_features_quantized(signal, &features_matrix, ei_dsp_blocks[0].config, input.params.scale, input.params.zero_point, impulse->frequency);
     if (ret != EIDSP_OK) {
         ei_printf("ERR: Failed to run DSP process (%d)\n", ret);
         return EI_IMPULSE_DSP_ERROR;
@@ -308,7 +322,7 @@ EI_IMPULSE_ERROR run_nn_inference_image_quantized(
     if (debug) {
         ei_printf("Features (%d ms.): ", result->timing.dsp);
         for (size_t ix = 0; ix < features_matrix.cols; ix++) {
-            ei_printf_float((features_matrix.buffer[ix] - input->params.zero_point) * input->params.scale);
+            ei_printf_float((features_matrix.buffer[ix] - input.params.zero_point) * input.params.scale);
             ei_printf(" ");
         }
         ei_printf("\n");
@@ -320,9 +334,9 @@ EI_IMPULSE_ERROR run_nn_inference_image_quantized(
         impulse,
         graph_config,
         ctx_start_us,
-        output,
-        output_labels,
-        output_scores,
+        &output,
+        &output_labels,
+        &output_scores,
         static_cast<uint8_t*>(p_tensor_arena.get()),
         result,
         debug);

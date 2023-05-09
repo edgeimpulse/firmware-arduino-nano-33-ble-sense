@@ -22,7 +22,11 @@
 
 #include "edge-impulse-sdk/classifier/ei_classifier_types.h"
 #include "edge-impulse-sdk/dsp/numpy.hpp"
+#if EI_CLASSIFIER_USE_FULL_TFLITE
+#include "tensorflow-lite/tensorflow/lite/c/common.h"
+#else
 #include "edge-impulse-sdk/tensorflow/lite/c/common.h"
+#endif // EI_CLASSIFIER_USE_FULL_TFLITE
 
 #define EI_CLASSIFIER_NONE                       255
 #define EI_CLASSIFIER_UTENSOR                    1
@@ -36,6 +40,7 @@
 #define EI_CLASSIFIER_AKIDA                      9
 #define EI_CLASSIFIER_SYNTIANT                   10
 #define EI_CLASSIFIER_ONNX_TIDL                  11
+#define EI_CLASSIFIER_MEMRYX                     12
 
 #define EI_CLASSIFIER_SENSOR_UNKNOWN             -1
 #define EI_CLASSIFIER_SENSOR_MICROPHONE          1
@@ -110,8 +115,8 @@ typedef struct {
     TfLiteStatus (*model_init)(void*(*alloc_fnc)(size_t, size_t));
     TfLiteStatus (*model_invoke)();
     TfLiteStatus (*model_reset)(void (*free)(void* ptr));
-    TfLiteTensor* (*model_input)(int);
-    TfLiteTensor* (*model_output)(int);
+    TfLiteStatus (*model_input)(int, TfLiteTensor*);
+    TfLiteStatus (*model_output)(int, TfLiteTensor*);
 } ei_config_tflite_eon_graph_t;
 
 typedef struct {
@@ -210,8 +215,8 @@ typedef struct {
     TfLiteStatus (*init_fn)(void*(*alloc_fnc)(size_t, size_t));
     TfLiteStatus (*invoke_fn)();
     TfLiteStatus (*reset_fn)(void (*free)(void* ptr));
-    TfLiteTensor* (*input_fn)(int);
-    TfLiteTensor* (*output_fn)(int);
+    TfLiteStatus (*input_fn)(int, TfLiteTensor*);
+    TfLiteStatus (*output_fn)(int, TfLiteTensor*);
 } ei_dsp_config_tflite_eon_t;
 
 #endif // _EDGE_IMPULSE_MODEL_TYPES_H_

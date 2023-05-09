@@ -214,6 +214,7 @@ EI_IMPULSE_ERROR run_nn_inference(
 {
     ei_learning_block_config_tflite_graph_t *block_config = ((ei_learning_block_config_tflite_graph_t*)config_ptr);
     ei_config_tflite_graph_t *graph_config = ((ei_config_tflite_graph_t*)block_config->graph_config);
+    EI_IMPULSE_ERROR fill_res = EI_IMPULSE_OK;
 
     // init Python embedded interpreter (should be called once!)
     static py::scoped_interpreter guard{};
@@ -311,12 +312,12 @@ EI_IMPULSE_ERROR run_nn_inference(
     if (impulse->object_detection) {
         switch (impulse->object_detection_last_layer) {
             case EI_CLASSIFIER_LAST_LAYER_FOMO: {
-                fill_result_struct_f32_fomo(
+                fill_res = fill_result_struct_f32_fomo(
                     impulse,
                     result,
                     potentials_v.data(),
-                    impulse->input_width / 8,
-                    impulse->input_height / 8);
+                    impulse->fomo_output_size,
+                    impulse->fomo_output_size);
                 break;
             }
             case EI_CLASSIFIER_LAST_LAYER_SSD: {
@@ -337,10 +338,10 @@ EI_IMPULSE_ERROR run_nn_inference(
         }
     }
     else {
-        fill_result_struct_f32(impulse, result, potentials_v.data(), debug);
+        fill_res = fill_result_struct_f32(impulse, result, potentials_v.data(), debug);
     }
 
-    return EI_IMPULSE_OK;
+    return fill_res;
 }
 
 #endif // EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_AKIDA

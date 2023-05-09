@@ -128,6 +128,7 @@ EI_IMPULSE_ERROR run_kmeans_anomaly(
     return EI_IMPULSE_OK;
 }
 
+#if (EI_CLASSIFIER_INFERENCING_ENGINE != EI_CLASSIFIER_NONE)
 EI_IMPULSE_ERROR run_gmm_anomaly(
     const ei_impulse_t *impulse,
     ei::matrix_t *fmatrix,
@@ -174,6 +175,7 @@ EI_IMPULSE_ERROR run_gmm_anomaly(
 
     return EI_IMPULSE_OK;
 }
+#endif // (EI_CLASSIFIER_INFERENCING_ENGINE != EI_CLASSIFIER_NONE)
 
 #endif //#if (EI_CLASSIFIER_HAS_ANOMALY == 1)
 #endif // _EDGE_IMPULSE_INFERENCING_ANOMALY_H_

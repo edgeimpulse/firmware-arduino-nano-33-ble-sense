@@ -155,7 +155,7 @@ bool ei_sampler_start_sampling(void *v_ptr_payload, starter_callback ei_sample_s
     if(ei_sample_start(&sample_data_callback, dev->get_sample_interval_ms()) == false)
         return false;
 	
-    while(current_sample < samples_required) {
+    while(current_sample <= samples_required) {
         ThisThread::sleep_for(50);
     };
 
@@ -277,7 +277,7 @@ static bool create_header(sensor_aq_payload_info *payload)
  */
 static void finish_and_upload(void)
 {
-    ei_printf("Done sampling, total bytes collected: %u\n", samples_required/samples_required_increase);
+    ei_printf("Done sampling, total bytes collected: %u\n", write_addr);
     ei_printf("[1/1] Uploading file to Edge Impulse...\n");
     ei_printf("Not uploading file, not connected to WiFi. Used buffer, from=0, to=%lu.\n", write_addr + headerOffset);//sample_buffer_size + headerOffset);
     ei_printf("[1/1] Uploading file to Edge Impulse OK (took 0 ms.)\n");

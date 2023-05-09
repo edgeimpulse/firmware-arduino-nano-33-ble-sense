@@ -22,11 +22,11 @@
 
 #if EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_TFLITE_FULL
 #include <thread>
-#include "tensorflow/lite/c/common.h"
-#include "tensorflow/lite/interpreter.h"
-#include "tensorflow/lite/kernels/register.h"
-#include "tensorflow/lite/model.h"
-#include "tensorflow/lite/optional_debug_tools.h"
+#include "tensorflow-lite/tensorflow/lite/c/common.h"
+#include "tensorflow-lite/tensorflow/lite/interpreter.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/register.h"
+#include "tensorflow-lite/tensorflow/lite/model.h"
+#include "tensorflow-lite/tensorflow/lite/optional_debug_tools.h"
 #endif // EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_TFLITE_FULL
 
 #if EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_TFLITE
@@ -35,23 +35,6 @@
 #include "edge-impulse-sdk/tensorflow/lite/micro/micro_error_reporter.h"
 #include "edge-impulse-sdk/tensorflow/lite/micro/micro_interpreter.h"
 #include "edge-impulse-sdk/tensorflow/lite/schema/schema_generated.h"
-
-#if defined(EI_CLASSIFIER_ENABLE_DETECTION_POSTPROCESS_OP)
-namespace tflite {
-namespace ops {
-namespace micro {
-extern TfLiteRegistration Register_TFLite_Detection_PostProcess(void);
-}  // namespace micro
-}  // namespace ops
-
-extern float post_process_boxes[10 * 4 * sizeof(float)];
-extern float post_process_classes[10];
-extern float post_process_scores[10];
-
-}  // namespace tflite
-
-static TfLiteRegistration post_process_op = tflite::ops::micro::Register_TFLite_Detection_PostProcess();
-#endif // #if defined(EI_CLASSIFIER_ENABLE_DETECTION_POSTPROCESS_OP)
 #endif // EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_TFLITE
 
 EI_IMPULSE_ERROR fill_input_tensor_from_matrix(
@@ -327,14 +310,8 @@ EI_IMPULSE_ERROR fill_result_struct_from_output_tensor_tflite(
             }
 #else
             case EI_CLASSIFIER_LAST_LAYER_SSD: {
-                #if EI_CLASSIFIER_ENABLE_DETECTION_POSTPROCESS_OP
-                    fill_res = fill_result_struct_f32_object_detection(impulse, result, tflite::post_process_boxes, tflite::post_process_scores, tflite::post_process_classes, debug);
-                #else
-                    ei_printf("ERR: Cannot run SSD model, EI_CLASSIFIER_ENABLE_DETECTION_POSTPROCESS_OP is disabled\n");
-                    return EI_IMPULSE_UNSUPPORTED_INFERENCING_ENGINE;
-                #endif
-
-                break;
+                ei_printf("ERR: MobileNet SSD is not supported in EON or TensorFlow Lite Micro\n");
+                return EI_IMPULSE_UNSUPPORTED_INFERENCING_ENGINE;
             }
 #endif // EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_TFLITE_FULL
             case EI_CLASSIFIER_LAST_LAYER_YOLOV5:
