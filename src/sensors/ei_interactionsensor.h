@@ -36,7 +36,7 @@ bool ei_interaction_init(void);
 float *ei_fusion_interaction_read_data(int n_samples);
 static const ei_device_fusion_sensor_t interaction_sensor = {
     // name of sensor module to be displayed in fusion list
-    "Interactional",
+    "Interactional (Color / Brightness / Proximity / Gesture)",
     // number of sensor module axis
     INTERACTION_AXIS_SAMPLED,
     // sampling frequencies

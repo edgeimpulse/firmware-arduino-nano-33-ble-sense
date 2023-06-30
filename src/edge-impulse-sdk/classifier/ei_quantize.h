@@ -1,5 +1,5 @@
-/* Edge Impulse ingestion SDK
- * Copyright (c) 2020 EdgeImpulse Inc.
+/* Edge Impulse inferencing library
+ * Copyright (c) 2022 EdgeImpulse Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,31 +20,18 @@
  * SOFTWARE.
  */
 
-#ifndef _EI_ENVIRONMENTSENSOR_H
-#define _EI_ENVIRONMENTSENSOR_H
+#ifndef __EI_QUANTIZE__H__
+#define __EI_QUANTIZE__H__
 
-/* Include ----------------------------------------------------------------- */
-#include "ei_config_types.h"
-#include "ei_fusion.h"
+#include <algorithm>
+#include <cmath>
 
-/** Number of axis used and sample data format */
-#define ENVIRONMENT_AXIS_SAMPLED			3
+static int32_t pre_cast_quantize(float value, float scale, int32_t zero_point, bool is_signed) {
 
-/* Function prototypes ----------------------------------------------------- */
-bool ei_environment_init(void);
-float *ei_fusion_environment_read_data(int n_samples);
+    int32_t max_value = is_signed ? 127 : 255;
+    int32_t min_value = is_signed ? -128 : 0;
+    // Saturate/clip any overflows post scaling
+    return std::min( std::max( static_cast<int32_t>(round(value / scale)) + zero_point, min_value), max_value);
+}
 
-static const ei_device_fusion_sensor_t environment_sensor = {
-    // name of sensor module to be displayed in fusion list
-    "Environmental (Temperature / Humidity / Pressure)",
-    // number of sensor module axis
-    ENVIRONMENT_AXIS_SAMPLED,
-    // sampling frequencies
-    { 1.0f, 12.5f },
-    // axis name and units payload (must be same order as read in)
-    { {"temperature", "degC"}, {"humidity", "%"}, {"pressure", "kPa"} },
-    // reference to read data function
-    &ei_fusion_environment_read_data
-};
-
-#endif
+#endif  //!__EI_QUANTIZE__H__
