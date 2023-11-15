@@ -26,7 +26,7 @@
 
 #include "ei_environmentsensor.h"
 #include "ei_device_nano_ble33.h"
-#include "sensor_aq.h"
+#include "firmware-sdk/sensor-aq/sensor_aq.h"
 
 #include <Arduino_HTS221.h>
 #include <Arduino_LPS22HB.h>
@@ -35,16 +35,19 @@
 /* Constant defines -------------------------------------------------------- */
 extern void ei_printf(const char *format, ...);
 
+static bool rev2 = false;
 static float htps_data[ENVIRONMENT_AXIS_SAMPLED];
 
 bool ei_environment_init(void)
 {
 	if (!HTS.begin()) {
 		ei_printf("Failed to initialize HTS!\r\n");
+		return false;
 	}
 	else {
 		ei_printf("HTS initialized\r\n");
 	}
+
 	if (!BARO.begin()) {
 		ei_printf("Failed to initialize BARO!\r\n");
 	}
@@ -53,6 +56,8 @@ bool ei_environment_init(void)
 	}
 
     ei_add_sensor_to_fusion_list(environment_sensor);
+
+	return true;
 }
 
 
@@ -60,6 +65,7 @@ float *ei_fusion_environment_read_data(int n_samples)
 {
 	htps_data[0] = HTS.readTemperature();
 	htps_data[1] = HTS.readHumidity();
+
 	htps_data[2] = BARO.readPressure(); // (PSI/MILLIBAR/KILOPASCAL) default kPa
 
 	return htps_data;

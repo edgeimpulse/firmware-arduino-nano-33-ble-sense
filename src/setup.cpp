@@ -4,7 +4,9 @@
 #include "ei_device_nano_ble33.h"
 #include "ei_microphone.h"
 #include "ei_inertialsensor.h"
+#include "ei_inertialsensor_rev2.h"
 #include "ei_environmentsensor.h"
+#include "ei_environmental_rev2.h"
 #include "ei_interactionsensor.h"
 #include "ei_camera.h"
 #include "ei_run_impulse.h"
@@ -48,8 +50,14 @@ void ei_main_init(void)
     //     wait_ms(1000);
     // }
 
-    ei_inertial_init();
-    ei_environment_init();
+    if (ei_inertial_init() == false) {        
+        ei_inertial_rev2_init();
+    }
+    
+    if (ei_environment_init() == false) {
+        ei_environment_rev2_init();
+    }
+    
     ei_interaction_init();
     ei_camera_init();
 

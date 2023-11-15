@@ -26,7 +26,7 @@
 
 #include "ei_interactionsensor.h"
 #include "ei_device_nano_ble33.h"
-#include "sensor_aq.h"
+#include "firmware-sdk/sensor-aq/sensor_aq.h"
 
 #include <Arduino_APDS9960.h>
 #include "mbed.h"

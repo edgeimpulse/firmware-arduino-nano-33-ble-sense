@@ -25,7 +25,7 @@
  */
 
 #include <string.h>
-#include "firmware-sdk/sensor_aq.h"
+#include "firmware-sdk/sensor-aq/sensor_aq.h"
 #include "edge-impulse-sdk/porting/ei_classifier_porting.h"
 
 typedef struct {

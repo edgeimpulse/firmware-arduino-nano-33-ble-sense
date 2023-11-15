@@ -26,7 +26,7 @@
 /**
  * HMAC SHA256 implementation using Mbed TLS
  */
-#include "firmware-sdk/sensor_aq.h"
+#include "firmware-sdk/sensor-aq/sensor_aq.h"
 
 typedef struct {
     char hmac_key[33];

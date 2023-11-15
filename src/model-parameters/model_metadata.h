@@ -52,11 +52,11 @@
 #define EI_CLASSIFIER_DATATYPE_UINT8             3
 #define EI_CLASSIFIER_DATATYPE_INT8              9
 
-#define EI_CLASSIFIER_PROJECT_ID                 36
+#define EI_CLASSIFIER_PROJECT_ID                 52
 #define EI_CLASSIFIER_PROJECT_OWNER              "Edge Impulse Profiling"
 #define EI_CLASSIFIER_PROJECT_NAME               "Demo: Continuous motion recognition"
-#define EI_CLASSIFIER_PROJECT_DEPLOY_VERSION     3
-#define EI_CLASSIFIER_NN_INPUT_FRAME_SIZE        39
+#define EI_CLASSIFIER_PROJECT_DEPLOY_VERSION     1
+#define EI_CLASSIFIER_NN_INPUT_FRAME_SIZE        33
 #define EI_CLASSIFIER_RAW_SAMPLE_COUNT           125
 #define EI_CLASSIFIER_RAW_SAMPLES_PER_FRAME      3
 #define EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE       (EI_CLASSIFIER_RAW_SAMPLE_COUNT * EI_CLASSIFIER_RAW_SAMPLES_PER_FRAME)
@@ -93,7 +93,7 @@
 
 #define EI_CLASSIFIER_HAS_FFT_INFO               1
 #define EI_CLASSIFIER_LOAD_FFT_32                0
-#define EI_CLASSIFIER_LOAD_FFT_64                1
+#define EI_CLASSIFIER_LOAD_FFT_64                0
 #define EI_CLASSIFIER_LOAD_FFT_128               0
 #define EI_CLASSIFIER_LOAD_FFT_256               0
 #define EI_CLASSIFIER_LOAD_FFT_512               0

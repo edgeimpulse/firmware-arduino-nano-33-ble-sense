@@ -55,9 +55,9 @@ typedef enum
 #define EDGE_STRINGIZE(x) EDGE_STRINGIZE_(x)
 
 /** MBED thread */
-Thread fusion_thread;
-EventQueue fusion_queue;
-mbed::Ticker fusion_sample_rate;
+Thread* fusion_thread;
+EventQueue* fusion_queue;
+int queue_id;
 
 #if MULTI_FREQ_ENABLED == 1
 void multi_sample_thread(void);
@@ -186,8 +186,17 @@ EiSnapshotProperties EiDeviceNanoBle33::get_snapshot_list(void)
  */
 bool EiDeviceNanoBle33::start_sample_thread(void (*sample_read_cb)(void), float sample_interval_ms)
 {
-    fusion_thread.start(callback(&fusion_queue, &EventQueue::dispatch_forever));
-    fusion_sample_rate.attach(fusion_queue.event(sample_read_cb), (sample_interval_ms / 1000.f));
+    osStatus retstatus;
+    fusion_thread = new Thread;
+    fusion_queue = new EventQueue;
+    retstatus = fusion_thread->start(callback(fusion_queue, &EventQueue::dispatch_forever));    
+    queue_id = fusion_queue->call_every(sample_interval_ms, sample_read_cb);
+
+    if ((queue_id == 0) || (retstatus != 0)) {
+        ei_printf("Can't allocate new thread\r\n");
+        return false;
+    }
+
     return true;
 }
 
@@ -219,8 +228,16 @@ bool EiDeviceNanoBle33::start_multi_sample_thread(void (*sample_multi_read_cb)(u
 
     this->actual_timer = 0;
 
-    fusion_thread.start(callback(&fusion_queue, &EventQueue::dispatch_forever));
-    fusion_sample_rate.attach(fusion_queue.event(multi_sample_thread), (this->sample_interval/1000.0f));
+    osStatus retstatus;
+    fusion_thread = new Thread;
+    fusion_queue = new EventQueue;
+    retstatus = fusion_thread->start(callback(fusion_queue, &EventQueue::dispatch_forever));    
+    queue_id = fusion_queue->call_every(sample_interval_ms, multi_sample_thread);
+
+    if ((queue_id == 0) || (retstatus != 0)) {
+        ei_printf("Can't allocate new thread\r\n");
+        return false;
+    }
 
     return true;
 }
@@ -231,8 +248,12 @@ bool EiDeviceNanoBle33::start_multi_sample_thread(void (*sample_multi_read_cb)(u
  * @return true
  */
 bool EiDeviceNanoBle33::stop_sample_thread(void)
-{
-    fusion_sample_rate.detach();
+{    
+    fusion_queue->cancel(queue_id);
+    fusion_queue->break_dispatch();
+    delete fusion_queue;
+    fusion_thread->join();
+    delete fusion_thread;
 
     return true;
 }

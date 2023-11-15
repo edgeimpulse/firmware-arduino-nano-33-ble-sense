@@ -27,22 +27,15 @@
 #include "ei_config_types.h"
 #include "ei_fusion.h"
 
-/** Number of axis used and sample data format */
-typedef float sample_format_t;
-#define N_AXIS_SAMPLED                      3
-#define SIZEOF_N_AXIS_SAMPLED               (sizeof(sample_format_t) * N_AXIS_SAMPLED)
-
 #define INERTIAL_AXIS_SAMPLED			    9
 
 /* Function prototypes ----------------------------------------------------- */
 bool ei_inertial_init(void);
-bool ei_inertial_sample_start(sampler_callback callback, float sample_interval_ms);
-bool ei_inertial_setup_data_sampling(void);
 
 float *ei_fusion_inertial_read_data(int n_samples);
 static const ei_device_fusion_sensor_t inertial_sensor = {
     // name of sensor module to be displayed in fusion list
-    "Inertial (Accelerometer / Gyroscope / Magnometer)",
+    "Inertial (Accelerometer / Gyroscope / Magnetometer)",
     // number of sensor module axis
     INERTIAL_AXIS_SAMPLED,
     // sampling frequencies

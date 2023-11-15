@@ -25,26 +25,26 @@
 #include <stdint.h>
 #include "model_metadata.h"
 #include "anomaly_metadata.h"
-#include "tflite-model/tflite_learn_11_compiled.h"
+#include "tflite-model/tflite_learn_3_compiled.h"
 
 #include "edge-impulse-sdk/classifier/ei_model_types.h"
 #include "edge-impulse-sdk/classifier/inferencing_engines/engines.h"
 
 const char* ei_classifier_inferencing_categories[] = { "idle", "snake", "updown", "wave" };
 
-uint8_t ei_dsp_config_7_axes[] = { 0, 1, 2 };
-const uint32_t ei_dsp_config_7_axes_size = 3;
-ei_dsp_config_spectral_analysis_t ei_dsp_config_7 = {
-    7, // uint32_t blockId
-    4, // int implementationVersion
+uint8_t ei_dsp_config_2_axes[] = { 0, 1, 2 };
+const uint32_t ei_dsp_config_2_axes_size = 3;
+ei_dsp_config_spectral_analysis_t ei_dsp_config_2 = {
+    2, // uint32_t blockId
+    2, // int implementationVersion
     3, // int length of axes
     1.0f, // float scale-axes
     1, // int input-decimation-ratio
-    "low", // select filter-type
-    8.0f, // float filter-cutoff
+    "none", // select filter-type
+    3.0f, // float filter-cutoff
     6, // int filter-order
     "FFT", // select analysis-type
-    64, // int fft-length
+    16, // int fft-length
     3, // int spectral-peaks-count
     0.1f, // float spectral-peaks-threshold
     "0.1, 0.5, 1.0, 2.0, 5.0", // string spectral-power-edges
@@ -57,27 +57,27 @@ ei_dsp_config_spectral_analysis_t ei_dsp_config_7 = {
 
 const size_t ei_dsp_blocks_size = 1;
 ei_model_dsp_t ei_dsp_blocks[ei_dsp_blocks_size] = {
-    { // DSP block 7
-        39,
+    { // DSP block 2
+        33,
         &extract_spectral_analysis_features,
-        (void*)&ei_dsp_config_7,
-        ei_dsp_config_7_axes,
-        ei_dsp_config_7_axes_size
+        (void*)&ei_dsp_config_2,
+        ei_dsp_config_2_axes,
+        ei_dsp_config_2_axes_size
     }
 };
-const ei_config_tflite_eon_graph_t ei_config_tflite_graph_11 = {
+const ei_config_tflite_eon_graph_t ei_config_tflite_graph_3 = {
     .implementation_version = 1,
-    .model_init = &tflite_learn_11_init,
-    .model_invoke = &tflite_learn_11_invoke,
-    .model_reset = &tflite_learn_11_reset,
-    .model_input = &tflite_learn_11_input,
-    .model_output = &tflite_learn_11_output,
+    .model_init = &tflite_learn_3_init,
+    .model_invoke = &tflite_learn_3_invoke,
+    .model_reset = &tflite_learn_3_reset,
+    .model_input = &tflite_learn_3_input,
+    .model_output = &tflite_learn_3_output,
 };
 
 
-const ei_learning_block_config_tflite_graph_t ei_learning_block_config_11 = {
+const ei_learning_block_config_tflite_graph_t ei_learning_block_config_3 = {
     .implementation_version = 1,
-    .block_id = 11,
+    .block_id = 3,
     .object_detection = 0,
     .object_detection_last_layer = EI_CLASSIFIER_LAST_LAYER_UNKNOWN,
     .output_data_tensor = 0,
@@ -85,10 +85,10 @@ const ei_learning_block_config_tflite_graph_t ei_learning_block_config_11 = {
     .output_score_tensor = 2,
     .quantized = 1,
     .compiled = 1,
-    .graph_config = (void*)&ei_config_tflite_graph_11
+    .graph_config = (void*)&ei_config_tflite_graph_3
 };
 
-const ei_learning_block_config_anomaly_kmeans_t ei_learning_block_config_13 = {
+const ei_learning_block_config_anomaly_kmeans_t ei_learning_block_config_4 = {
     .implementation_version = 1,
     .anom_axis = ei_classifier_anom_axes,
     .anom_axes_size = 3,
@@ -102,12 +102,12 @@ const size_t ei_learning_blocks_size = 2;
 const ei_learning_block_t ei_learning_blocks[ei_learning_blocks_size] = {
     {
         &run_nn_inference,
-        (void*)&ei_learning_block_config_11,
+        (void*)&ei_learning_block_config_3,
         EI_CLASSIFIER_IMAGE_SCALING_NONE,
     },
     {
         &run_kmeans_anomaly,
-        (void*)&ei_learning_block_config_13,
+        (void*)&ei_learning_block_config_4,
         EI_CLASSIFIER_IMAGE_SCALING_NONE,
     },
 };
@@ -121,13 +121,13 @@ const ei_model_performance_calibration_t ei_calibration = {
     0   /* Don't use flags */
 };
 
-const ei_impulse_t impulse_36_3 = {
-    .project_id = 36,
+const ei_impulse_t impulse_52_1 = {
+    .project_id = 52,
     .project_owner = "Edge Impulse Profiling",
     .project_name = "Demo: Continuous motion recognition",
-    .deploy_version = 3,
+    .deploy_version = 1,
 
-    .nn_input_frame_size = 39,
+    .nn_input_frame_size = 33,
     .raw_sample_count = 125,
     .raw_samples_per_frame = 3,
     .dsp_input_frame_size = 125 * 3,
@@ -162,6 +162,6 @@ const ei_impulse_t impulse_36_3 = {
     .categories = ei_classifier_inferencing_categories
 };
 
-const ei_impulse_t ei_default_impulse = impulse_36_3;
+const ei_impulse_t ei_default_impulse = impulse_52_1;
 
 #endif // _EI_CLASSIFIER_MODEL_METADATA_H_

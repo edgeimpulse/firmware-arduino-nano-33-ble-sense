@@ -13,11 +13,13 @@ BOARD="${ARDUINO_CORE}":nano33ble
 
 # declare associative array pre bash 4 style
 ARDUINO_LIBS=(
-"Arduino_LSM9DS1=1.0.0"   # Inertial sensor library
-"Arduino_HTS221=1.0.0"    # Environment sensor library
-"Arduino_LPS22HB=1.0.0"   # Pressure sensor library
-"Arduino_APDS9960=1.0.3"  # Interaction sensor library
-"Arduino_OV767X=0.0.2"    # Camera sensor library
+"Arduino_LSM9DS1=1.0.0"             # Inertial sensor library
+"Arduino_HTS221=1.0.0"              # Environment sensor library
+"Arduino_LPS22HB=1.0.0"             # Pressure sensor library
+"Arduino_APDS9960=1.0.3"            # Interaction sensor library
+"Arduino_OV767X=0.0.2"              # Camera sensor library
+"Arduino_BMI270_BMM150=1.1.0"       # Inertial for rev2
+"Arduino_HS300x=1.0.0"              # Environment sensor library for rev2
 )
 
 ###############################################################################
@@ -209,8 +211,6 @@ INCLUDE+=" -I ./src/ingestion-sdk-c/inc"
 INCLUDE+=" -I ./src/ingestion-sdk-c/inc/signing"
 INCLUDE+=" -I ./src/ingestion-sdk-platform/nano-ble33"
 INCLUDE+=" -I ./src/sensors"
-INCLUDE+=" -I ./src/QCBOR/inc"
-INCLUDE+=" -I ./src/QCBOR/src"
 INCLUDE+=" -I ./src/mbedtls_hmac_sha256_sw/"
 INCLUDE+=" -I ./src/firmware-sdk/"
 

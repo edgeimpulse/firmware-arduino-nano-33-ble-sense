@@ -22,6 +22,7 @@
 
 #include "ei_flash_nano_ble33.h"
 #include "edge-impulse-sdk/porting/ei_classifier_porting.h"
+#include <cmath>
 
 /** 32-bit align write buffer size */
 #define WORD_ALIGN(a)	((a & 0x3) ? (a & ~0x3) + 0x4 : a)

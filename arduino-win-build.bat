@@ -88,9 +88,21 @@ IF %ERRORLEVEL% NEQ 0 (
 )
 :AFTERINSTALLCAMERA
 
+(arduino-cli lib list Arduino_BMI270_BMM150 2> nul) | findstr /r "1.1.0"
+IF %ERRORLEVEL% NEQ 0 (
+    GOTO INSTALLIMU_REV2
+)
+:AFTERINSTALLIMU_REV2
+
+(arduino-cli lib list Arduino_HS300x 2> nul) | findstr /r "1.0.0"
+IF %ERRORLEVEL% NEQ 0 (
+    GOTO INSTALLENVIRONMENTAL_REV2
+)
+:AFTERINSTALLENVIRONMENTAL_REV2
+
 :: define and include
 set DEFINE=-DARDUINOSTL_M_H -DDMBED_HEAP_STATS_ENABLED=1 -DMBED_STACK_STATS_ENABLED=1 -O3 -g3 -DEI_SENSOR_AQ_STREAM=FILE -DEIDSP_QUANTIZE_FILTERBANK=0 -DEI_CLASSIFIER_SLICES_PER_MODEL_WINDOW=4 -mfpu=fpv4-sp-d16
-set INCLUDE=-I.\\src\\ -I.\\src\\model-parameters\\ -I.\\src\\ingestion-sdk-c\\ -I.\\src\\ingestion-sdk-c\\inc\\ -I.\\src\\ingestion-sdk-c\\inc\\signing\\ -I.\\src\\ingestion-sdk-platform\\nano-ble33\\ -I.\\src\\sensors\\ -I.\\src\\sensors\\ -I.\\src\\QCBOR\\inc\\ -I.\\src\\QCBOR\\src\\ -I.\\src\\mbedtls_hmac_sha256_sw\\ -I.\\src\\firmware-sdk\\
+set INCLUDE=-I.\\src\\ -I.\\src\\model-parameters\\ -I.\\src\\ingestion-sdk-c\\ -I.\\src\\ingestion-sdk-c\\inc\\ -I.\\src\\ingestion-sdk-c\\inc\\signing\\ -I.\\src\\ingestion-sdk-platform\\nano-ble33\\ -I.\\src\\sensors\\ -I.\\src\\sensors\\ -I.\\src\\mbedtls_hmac_sha256_sw\\ -I.\\src\\firmware-sdk\\
 
 rem CLI v0.14 updates the name of this to --build-property
 set BUILD_PROPERTIES_FLAG=--build-property
@@ -196,6 +208,20 @@ arduino-cli lib update-index
 arduino-cli lib install Arduino_OV767X@0.0.2
 echo Installing Arduino_OV767X OK
 GOTO AFTERINSTALLCAMERA
+
+:INSTALLIMU_REV2
+echo Installing Arduino_BMI270_BMM150...
+arduino-cli lib update-index
+arduino-cli lib install Arduino_BMI270_BMM150@1.1.0
+echo Installing Arduino_BMI270_BMM150 OK
+GOTO AFTERINSTALLIMU_REV2
+
+:INSTALLENVIRONMENTAL_REV2
+echo Installing Arduino_HS300x...
+arduino-cli lib update-index
+arduino-cli lib install Arduino_HS300x@1.0.0
+echo Installing Arduino_HS300x OK
+GOTO AFTERINSTALLENVIRONMENTAL_REV2
 
 :NOTCONNECTED
 echo Cannot find a connected Arduino Arduino Nano 33 ble development board via 'arduino-cli board list'

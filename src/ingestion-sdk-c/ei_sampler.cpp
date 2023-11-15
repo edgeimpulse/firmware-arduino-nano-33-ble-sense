@@ -171,56 +171,6 @@ bool ei_sampler_start_sampling(void *v_ptr_payload, starter_callback ei_sample_s
     // finish the signing
     ctx_err = ei_mic_ctx.signature_ctx->finish(ei_mic_ctx.signature_ctx, ei_mic_ctx.hash_buffer.buffer);
 
-    // load the first page in flash...
-    uint8_t *page_buffer = (uint8_t*)ei_malloc(mem->block_size);
-    if (!page_buffer) {
-        ei_printf("Failed to allocate a page buffer to write the hash\n");
-        return false;
-    }
-
-    int j = mem->read_sample_data(page_buffer, 0, mem->block_size);
-    if (j != mem->block_size) {
-        ei_printf("Failed to read first page\n");
-        free(page_buffer);
-        return false;
-    }
-
-    // update the hash
-    uint8_t *hash = ei_mic_ctx.hash_buffer.buffer;
-    // we have allocated twice as much for this data (because we also want to be able to represent in hex)
-    // thus only loop over the first half of the bytes as the signature_ctx has written to those
-    for (size_t hash_ix = 0; hash_ix < (ei_mic_ctx.hash_buffer.size / 2); hash_ix++) {
-        // this might seem convoluted, but snprintf() with %02x is not always supported e.g. by newlib-nano
-        // we encode as hex... first ASCII char encodes top 4 bytes
-        uint8_t first = (hash[hash_ix] >> 4) & 0xf;
-        // second encodes lower 4 bytes
-        uint8_t second = hash[hash_ix] & 0xf;
-
-        // if 0..9 -> '0' (48) + value, if >10, then use 'a' (97) - 10 + value
-        char first_c = first >= 10 ? 87 + first : 48 + first;
-        char second_c = second >= 10 ? 87 + second : 48 + second;
-
-        page_buffer[ei_mic_ctx.signature_index + (hash_ix * 2) + 0] = first_c;
-        page_buffer[ei_mic_ctx.signature_index + (hash_ix * 2) + 1] = second_c;
-    }
-
-    
-    j = mem->erase_sample_data(0, mem->block_size);
-    if (j != mem->block_size) {
-        ei_printf("Failed to erase first page\n");
-        free(page_buffer);
-        return false;
-    }
-
-    j = mem->write_sample_data(page_buffer, 0, mem->block_size);
-
-    free(page_buffer);
-
-    if (j != mem->block_size) {
-        ei_printf("Failed to write first page with updated hash\n");
-        return false;
-    }
-
     finish_and_upload();
 
     return true;
