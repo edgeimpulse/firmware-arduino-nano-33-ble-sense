@@ -135,6 +135,10 @@ void ei_free(void *ptr);
 
 #ifndef EI_PORTING_ESPRESSIF
 #if (defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32S3))
+#include "esp_idf_version.h"
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+#define portTICK_RATE_MS portTICK_PERIOD_MS
+#endif
 #define EI_PORTING_ESPRESSIF      1
 #define EI_PORTING_ARDUINO        0
 #else
