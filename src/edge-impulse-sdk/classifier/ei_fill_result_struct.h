@@ -27,6 +27,7 @@ using namespace ei;
 #include "edge-impulse-sdk/classifier/ei_model_types.h"
 #include "edge-impulse-sdk/classifier/ei_classifier_types.h"
 #include "edge-impulse-sdk/classifier/ei_nms.h"
+#include "edge-impulse-sdk/dsp/ei_vector.h"
 
 #ifndef EI_HAS_OBJECT_DETECTION
     #if (EI_CLASSIFIER_OBJECT_DETECTION_LAST_LAYER == EI_CLASSIFIER_LAST_LAYER_SSD)
@@ -363,6 +364,69 @@ __attribute__((unused)) static EI_IMPULSE_ERROR fill_result_struct_f32(const ei_
         result->classification[ix].value = value;
     }
 
+    return EI_IMPULSE_OK;
+}
+
+/**
+ * Fill the visual anomaly result structures from an unquantized output tensor
+ */
+__attribute__((unused)) static EI_IMPULSE_ERROR fill_result_visual_ad_struct_f32(const ei_impulse_t *impulse,
+                                                                       ei_impulse_result_t *result,
+                                                                       float *data,
+                                                                       bool debug) {
+#ifdef EI_CLASSIFIER_HAS_VISUAL_ANOMALY
+    float max_val = 0;
+    float sum_val = 0;
+    // the feature extractor output will be 1/8 of input
+    // due to the cut-off layer chosen in MobileNetV2
+    uint32_t grid_size_x = (impulse->input_width / 8) / 2 - 1;
+    uint32_t grid_size_y = (impulse->input_height / 8) / 2 - 1;
+
+    for (uint32_t ix = 0; ix < grid_size_x * grid_size_y; ix++) {
+        float value = data[ix];
+        sum_val += value;
+        if (value > max_val) {
+            max_val = value;
+        }
+    }
+
+    result->visual_ad_result.mean_value = sum_val / (grid_size_x * grid_size_y);
+    result->visual_ad_result.max_value = max_val;
+
+    static ei_vector<ei_impulse_result_bounding_box_t> results;
+
+    int added_boxes_count = 0;
+    results.clear();
+
+    for (uint32_t x = 0; x <= grid_size_x - 1; x++) {
+        for (uint32_t y = 0; y <= grid_size_y - 1; y++) {
+            if (data[x * grid_size_x + y] >= impulse->object_detection_threshold) {
+                ei_impulse_result_bounding_box_t tmp = {
+                    .label = "anomaly",
+                    .x = static_cast<uint32_t>(y * (static_cast<float>(impulse->input_height) / grid_size_y)),
+                    .y = static_cast<uint32_t>(x * (static_cast<float>(impulse->input_width) / grid_size_x)),
+                    .width = (impulse->input_width / grid_size_x),
+                    .height = (impulse->input_height / grid_size_y),
+                    .value = data[x * grid_size_x + y]
+                };
+
+                results.push_back(tmp);
+                added_boxes_count++;
+            }
+        }
+    }
+
+    // if we didn't detect min required objects, fill the rest with fixed value
+    if (added_boxes_count < impulse->object_detection_count) {
+        results.resize(impulse->object_detection_count);
+        for (size_t ix = added_boxes_count; ix < impulse->object_detection_count; ix++) {
+            results[ix].value = 0.0f;
+        }
+    }
+
+    result->visual_ad_grid_cells = results.data();
+    result->visual_ad_count = results.size();
+#endif
     return EI_IMPULSE_OK;
 }
 
@@ -885,5 +949,20 @@ __attribute__((unused)) static EI_IMPULSE_ERROR fill_result_struct_f32_yolov7(co
     return EI_IMPULSE_LAST_LAYER_NOT_AVAILABLE;
 #endif // #ifdef EI_HAS_YOLOV7
 }
+
+#if EI_CLASSIFIER_SINGLE_FEATURE_INPUT == 0
+bool find_mtx_by_idx(ei_feature_t* mtx, ei::matrix_t** matrix, uint32_t mtx_id, size_t mtx_size) {
+    for (size_t i = 0; i < mtx_size; i++) {
+        if (&mtx[i] == NULL) {
+            continue;
+        }
+        if (mtx[i].blockId == mtx_id || mtx[i].blockId == 0) {
+            *matrix = mtx[i].matrix;
+            return true;
+        }
+    }
+    return false;
+}
+#endif
 
 #endif // _EI_CLASSIFIER_FILL_RESULT_STRUCT_H_

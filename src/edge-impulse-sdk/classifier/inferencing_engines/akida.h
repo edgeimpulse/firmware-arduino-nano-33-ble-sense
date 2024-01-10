@@ -263,13 +263,16 @@ void debug_print(const std::vector<T> vec, const int val_per_row = 3)
  */
 EI_IMPULSE_ERROR run_nn_inference(
     const ei_impulse_t *impulse,
-    ei::matrix_t *fmatrix,
+    ei_feature_t *fmatrix,
+    uint32_t* input_block_ids,
+    uint32_t input_block_ids_size,
     ei_impulse_result_t *result,
     void *config_ptr,
-    bool debug = false)
+    bool debug)
 {
     ei_learning_block_config_tflite_graph_t *block_config = ((ei_learning_block_config_tflite_graph_t*)config_ptr);
     ei_config_tflite_graph_t *graph_config = ((ei_config_tflite_graph_t*)block_config->graph_config);
+
     EI_IMPULSE_ERROR fill_res = EI_IMPULSE_OK;
 
     // init Python embedded interpreter (should be called once!)
@@ -299,12 +302,27 @@ EI_IMPULSE_ERROR run_nn_inference(
      */
     auto r = input_data.mutable_unchecked<4>();
     float temp;
-    for (py::ssize_t x = 0; x < r.shape(1); x++) {
-        for (py::ssize_t y = 0; y < r.shape(2); y++) {
-            for(py::ssize_t z = 0; z < r.shape(3); z++) {
-                temp = (fmatrix->buffer[x * r.shape(2) * r.shape(3) + y * r.shape(3) + z] * scale);
-                temp = std::max(0.0f, std::min(temp, 255.0f));
-                r(0, x, y, z) = (uint8_t)(temp / down_scale);
+
+    size_t mtx_size = impulse->dsp_blocks_size + impulse->learning_blocks_size;
+    for (size_t i = 0; i < input_block_ids_size; i++) {
+        uint16_t cur_mtx = input_block_ids[i];
+#if EI_CLASSIFIER_SINGLE_FEATURE_INPUT == 0
+        ei::matrix_t* matrix = NULL;
+
+        if (!find_mtx_by_idx(fmatrix, &matrix, cur_mtx, mtx_size)) {
+            ei_printf("ERR: Cannot find matrix with id %zu\n", cur_mtx);
+            return EI_IMPULSE_INVALID_SIZE;
+        }
+#else
+        ei::matrix_t* matrix = fmatrix[0].matrix;
+#endif
+        for (py::ssize_t x = 0; x < r.shape(1); x++) {
+            for (py::ssize_t y = 0; y < r.shape(2); y++) {
+                for(py::ssize_t z = 0; z < r.shape(3); z++) {
+                    temp = (matrix->buffer[x * r.shape(2) * r.shape(3) + y * r.shape(3) + z] * scale);
+                    temp = std::max(0.0f, std::min(temp, 255.0f));
+                    r(0, x, y, z) = (uint8_t)(temp / down_scale);
+                }
             }
         }
     }

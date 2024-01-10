@@ -58,6 +58,7 @@ ei_dsp_config_spectral_analysis_t ei_dsp_config_2 = {
 const size_t ei_dsp_blocks_size = 1;
 ei_model_dsp_t ei_dsp_blocks[ei_dsp_blocks_size] = {
     { // DSP block 2
+        2,
         33,
         &extract_spectral_analysis_features,
         (void*)&ei_dsp_config_2,
@@ -99,16 +100,30 @@ const ei_learning_block_config_anomaly_kmeans_t ei_learning_block_config_4 = {
 };
 
 const size_t ei_learning_blocks_size = 2;
+const uint32_t ei_learning_block_3_inputs[1] = { 2 };
+const uint32_t ei_learning_block_3_inputs_size = 1;
+const uint32_t ei_learning_block_4_inputs[1] = { 2 };
+const uint32_t ei_learning_block_4_inputs_size = 1;
 const ei_learning_block_t ei_learning_blocks[ei_learning_blocks_size] = {
     {
+        3,
+        false,
         &run_nn_inference,
         (void*)&ei_learning_block_config_3,
         EI_CLASSIFIER_IMAGE_SCALING_NONE,
+        ei_learning_block_3_inputs,
+        ei_learning_block_3_inputs_size,
+        4
     },
     {
+        4,
+        false,
         &run_kmeans_anomaly,
         (void*)&ei_learning_block_config_4,
         EI_CLASSIFIER_IMAGE_SCALING_NONE,
+        ei_learning_block_4_inputs,
+        ei_learning_block_4_inputs_size,
+        1
     },
 };
 
@@ -121,8 +136,8 @@ const ei_model_performance_calibration_t ei_calibration = {
     0   /* Don't use flags */
 };
 
-const ei_impulse_t impulse_52_1 = {
-    .project_id = 52,
+const ei_impulse_t impulse_134_1 = {
+    .project_id = 134,
     .project_owner = "Edge Impulse Profiling",
     .project_name = "Demo: Continuous motion recognition",
     .deploy_version = 1,
@@ -162,6 +177,6 @@ const ei_impulse_t impulse_52_1 = {
     .categories = ei_classifier_inferencing_categories
 };
 
-const ei_impulse_t ei_default_impulse = impulse_52_1;
+const ei_impulse_t ei_default_impulse = impulse_134_1;
 
 #endif // _EI_CLASSIFIER_MODEL_METADATA_H_

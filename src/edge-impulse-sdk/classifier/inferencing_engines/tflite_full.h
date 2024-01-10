@@ -138,7 +138,9 @@ extern "C" EI_IMPULSE_ERROR run_nn_inference_from_dsp(
 
 EI_IMPULSE_ERROR run_nn_inference(
     const ei_impulse_t *impulse,
-    ei::matrix_t *fmatrix,
+    ei_feature_t *fmatrix,
+    uint32_t* input_block_ids,
+    uint32_t input_block_ids_size,
     ei_impulse_result_t *result,
     void *config_ptr,
     bool debug = false)
@@ -161,7 +163,8 @@ EI_IMPULSE_ERROR run_nn_inference(
         return EI_IMPULSE_OUTPUT_TENSOR_WAS_NULL;
     }
 
-    auto input_res = fill_input_tensor_from_matrix(fmatrix, input);
+    size_t mtx_size = impulse->dsp_blocks_size + impulse->learning_blocks_size;
+    auto input_res = fill_input_tensor_from_matrix(fmatrix, input, input_block_ids, input_block_ids_size, mtx_size);
     if (input_res != EI_IMPULSE_OK) {
         return input_res;
     }
@@ -178,6 +181,13 @@ EI_IMPULSE_ERROR run_nn_inference(
 
     result->timing.classification_us = ctx_end_us - ctx_start_us;
     result->timing.classification = (int)(result->timing.classification_us / 1000);
+
+    if (result->copy_output) {
+        auto output_res = fill_output_matrix_from_tensor(output, fmatrix[impulse->dsp_blocks_size].matrix);
+        if (output_res != EI_IMPULSE_OK) {
+            return output_res;
+        }
+    }
 
     if (debug) {
         ei_printf("Predictions (time: %d ms.):\n", result->timing.classification);

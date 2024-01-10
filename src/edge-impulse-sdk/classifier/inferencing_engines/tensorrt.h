@@ -52,7 +52,9 @@ inline bool file_exists(char *model_file_name)
  */
 EI_IMPULSE_ERROR run_nn_inference(
     const ei_impulse_t *impulse,
-    ei::matrix_t *fmatrix,
+    ei_feature_t *fmatrix,
+    uint32_t* input_block_ids,
+    uint32_t input_block_ids_size,
     ei_impulse_result_t *result,
     void *config_ptr,
     bool debug = false)
@@ -130,9 +132,33 @@ EI_IMPULSE_ERROR run_nn_inference(
         ei_trt_handle = libeitrt::create_EiTrt(model_file_name, debug);
     }
 
+#if EI_CLASSIFIER_SINGLE_FEATURE_INPUT == 0
+    size_t mtx_size = impulse->dsp_blocks_size + impulse->learning_blocks_size;
+    ei::matrix_t* matrix = NULL;
+
+    ei::matrix_t combined_matrix(1, impulse->nn_input_frame_size);
+    uint32_t buf_pos = 0;
+
+    for (size_t i = 0; i < input_block_ids_size; i++) {
+        size_t cur_mtx = input_block_ids[i];
+
+        if (!find_mtx_by_idx(fmatrix, &matrix, cur_mtx, mtx_size)) {
+            ei_printf("ERR: Cannot find matrix with id %zu\n", cur_mtx);
+            return EI_IMPULSE_INVALID_SIZE;
+        }
+
+        for (size_t ix = 0; ix < matrix->rows * matrix->cols; ix++) {
+            combined_matrix.buffer[buf_pos++] = matrix->buffer[ix];
+        }
+    }
+    matrix = &combined_matrix;
+#else
+    ei::matrix_t* matrix = fmatrix[0].matrix;
+#endif
+
     uint64_t ctx_start_us = ei_read_timer_us();
 
-    libeitrt::infer(ei_trt_handle, fmatrix->buffer, out_data, out_data_size);
+    libeitrt::infer(ei_trt_handle, matrix->buffer, out_data, out_data_size);
 
     uint64_t ctx_end_us = ei_read_timer_us();
 

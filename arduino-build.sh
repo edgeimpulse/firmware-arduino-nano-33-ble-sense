@@ -30,7 +30,7 @@ if [ -z "$ARDUINO_CLI" ]; then
 fi
 DIRNAME="$(basename "$SCRIPTPATH")"
 EXPECTED_CLI_MAJOR=0
-EXPECTED_CLI_MINOR=18
+EXPECTED_CLI_MINOR=33
 
 CLI_MAJOR=$($ARDUINO_CLI version | cut -d. -f1 | rev | cut -d ' '  -f1)
 CLI_MINOR=$($ARDUINO_CLI version | cut -d. -f2)

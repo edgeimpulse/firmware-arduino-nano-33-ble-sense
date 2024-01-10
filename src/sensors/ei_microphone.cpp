@@ -84,8 +84,8 @@ static sensor_aq_ctx ei_mic_ctx = {
 /* Audio thread setup */
 #define AUDIO_THREAD_STACK_SIZE             4096
 static uint8_t AUDIO_THREAD_STACK[AUDIO_THREAD_STACK_SIZE];
-Thread queue_thread(osPriorityHigh, AUDIO_THREAD_STACK_SIZE, AUDIO_THREAD_STACK, "audio-thread-stack");
-static EventQueue mic_queue;
+Thread* queue_thread;
+EventQueue* mic_queue;
 
 
 extern "C" {
@@ -111,7 +111,6 @@ static uint32_t pdm_clock_calculate(uint64_t sampleRate)
     return (uint32_t)clk_control;
 }
 
-
 static void ei_microphone_blink() {
     led = !led;
 }
@@ -128,11 +127,14 @@ static void audio_buffer_callback(uint32_t n_bytes)
     if(current_sample >= (samples_required << 1)) {
         PDM.end();
         record_ready = false;
-        free(sampleBuffer);
+        ei_free(sampleBuffer);
     }
 }
 
-
+/**
+ * @brief 
+ * 
+ */
 static void pdm_data_ready_callback(void)
 {
     int bytesAvailable = PDM.available();
@@ -142,11 +144,15 @@ static void pdm_data_ready_callback(void)
     int bytesRead = PDM.read((char *)&sampleBuffer[0], bytesAvailable);
 
     if(record_ready == true) {
-        mic_queue.call(&audio_buffer_callback, bytesRead);
+        mic_queue->call(&audio_buffer_callback, bytesRead);
     }
 }
 
-
+/**
+ * @brief 
+ * 
+ * @param n_bytes 
+ */
 static void audio_buffer_inference_callback(uint32_t n_bytes)
 {
     for(int i = 0; i < n_bytes>>1; i++) {
@@ -160,6 +166,10 @@ static void audio_buffer_inference_callback(uint32_t n_bytes)
     }
 }
 
+/**
+ * @brief 
+ * 
+ */
 static void pdm_data_ready_inference_callback(void)
 {
     int bytesAvailable = PDM.available();
@@ -168,7 +178,7 @@ static void pdm_data_ready_inference_callback(void)
     int bytesRead = PDM.read((char *)&sampleBuffer[0], bytesAvailable);
 
     if(record_ready == true) {
-        mic_queue.call(&audio_buffer_inference_callback, bytesRead);
+        mic_queue->call(&audio_buffer_inference_callback, bytesRead);
     }
 }
 
@@ -179,8 +189,6 @@ static void finish_and_upload(void) {
     mbed::Ticker t;
     t.attach(&ei_microphone_blink, 1.0f);
     ei_printf("[1/1] Uploading file to Edge Impulse...\n");
-    //ei_printf("Not uploading file, not connected to WiFi. Used buffer, type=%d, from=%lu, to=%lu, sensor_name=%s, sensor_units=%s.\n",
-    //            EI_INT16, 0, sample_block*4096 + headerOffset, "audio", "wav");
     ei_printf("Not uploading file, not connected to WiFi. Used buffer, from=%lu, to=%lu.\n", 0, current_sample + headerOffset);
     ei_printf("[1/1] Uploading file to Edge Impulse OK (took 0 ms.)\n");
 
@@ -292,7 +300,10 @@ bool ei_microphone_record(uint32_t sample_length_ms, uint32_t start_delay_ms, bo
 
     create_header();
 
-    queue_thread.start(callback(&mic_queue, &EventQueue::dispatch_forever));
+    queue_thread = new Thread(osPriorityHigh, AUDIO_THREAD_STACK_SIZE, AUDIO_THREAD_STACK, "audio-thread-stack");
+    mic_queue = new EventQueue;
+
+    queue_thread->start(callback(mic_queue, &EventQueue::dispatch_forever));
 
     if (print_start_messages) {
         ei_printf("Sampling...\n");
@@ -303,6 +314,7 @@ bool ei_microphone_record(uint32_t sample_length_ms, uint32_t start_delay_ms, bo
 
 bool ei_microphone_inference_start(uint32_t n_samples, float interval_ms)
 {
+    record_ready = false;
 
     inference.buffers[0] = (int16_t *)ei_malloc(n_samples * sizeof(int16_t));
 
@@ -313,15 +325,15 @@ bool ei_microphone_inference_start(uint32_t n_samples, float interval_ms)
     inference.buffers[1] = (int16_t *)ei_malloc(n_samples * sizeof(int16_t));
 
     if(inference.buffers[1] == NULL) {
-        free(inference.buffers[0]);
+        ei_free(inference.buffers[0]);
         return false;
     }
 
     sampleBuffer = (int16_t *)ei_malloc((n_samples / 100) * sizeof(int16_t));
 
     if(sampleBuffer == NULL) {
-        free(inference.buffers[0]);
-        free(inference.buffers[1]);
+        ei_free(inference.buffers[0]);
+        ei_free(inference.buffers[1]);
         return false;
     }
 
@@ -329,8 +341,6 @@ bool ei_microphone_inference_start(uint32_t n_samples, float interval_ms)
     inference.buf_count  = 0;
     inference.n_samples  = n_samples;
     inference.buf_ready  = 0;
-
-    queue_thread.start(callback(&mic_queue, &EventQueue::dispatch_forever));
 
     // configure the data receive callback
     PDM.onReceive(&pdm_data_ready_inference_callback);
@@ -353,6 +363,11 @@ bool ei_microphone_inference_start(uint32_t n_samples, float interval_ms)
 
     // set the gain, defaults to 20
     PDM.setGain(127);
+
+    queue_thread = new Thread(osPriorityHigh, AUDIO_THREAD_STACK_SIZE, AUDIO_THREAD_STACK, "audio-thread-stack");
+    mic_queue = new EventQueue;
+
+    queue_thread->start(callback(mic_queue, &EventQueue::dispatch_forever));
 
     record_ready = true;
 
@@ -402,13 +417,26 @@ int ei_microphone_audio_signal_get_data(size_t offset, size_t length, float *out
     return numpy::int16_to_float(&inference.buffers[inference.buf_select ^ 1][offset], out_ptr, length);
 }
 
-
+/**
+ * @brief 
+ * 
+ * @return true 
+ * @return false 
+ */
 bool ei_microphone_inference_end(void)
 {
+    record_ready = false;
     PDM.end();
-    free(inference.buffers[0]);
-    free(inference.buffers[1]);
-    free(sampleBuffer);
+
+    ei_free(inference.buffers[0]);
+    ei_free(inference.buffers[1]);
+    ei_free(sampleBuffer);
+
+    mic_queue->break_dispatch();
+    delete mic_queue;
+
+    queue_thread->join();
+    delete queue_thread;
 }
 
 /**
@@ -421,6 +449,8 @@ bool ei_microphone_sample_start(void)
     // this sensor does not have settable interval...
     // ei_config_set_sample_interval(static_cast<float>(1000) / static_cast<float>(audio_sampling_frequency));
     int sample_length_blocks;
+
+    record_ready = false;
 
     ei_printf("Sampling settings:\n");
     ei_printf("\tInterval: %.5f ms.\n", dev->get_sample_interval_ms());
@@ -469,6 +499,7 @@ bool ei_microphone_sample_start(void)
     // set the gain, defaults to 20
     PDM.setGain(127);
 
+    ei_printf("ei_microphone_record\r\n");
     bool r = ei_microphone_record(dev->get_sample_length_ms(), (((samples_required <<1)/ mem->block_size) * mem->block_erase_time), true);
     if (!r) {
         return r;
@@ -477,65 +508,20 @@ bool ei_microphone_sample_start(void)
 
 
     while(record_ready == true) {
-        ThisThread::sleep_for(10);
+        ThisThread::sleep_for(100);
     };
 
+    mic_queue->break_dispatch();
+    delete mic_queue;
+
+    queue_thread->join();
+    delete queue_thread;
 
     int ctx_err = ei_mic_ctx.signature_ctx->finish(ei_mic_ctx.signature_ctx, ei_mic_ctx.hash_buffer.buffer);
     if (ctx_err != 0) {
         ei_printf("Failed to finish signature (%d)\n", ctx_err);
         return false;
     }
-
-    // load the first page in flash...
-    uint8_t *page_buffer = (uint8_t*)ei_malloc(mem->block_size);
-    if (!page_buffer) {
-        ei_printf("Failed to allocate a page buffer to write the hash\n");
-        return false;
-    }
-
-    int j = mem->read_sample_data(page_buffer, 0, mem->block_size);
-    if (j != mem->block_size) {
-        ei_printf("Failed to read first page\n");
-        free(page_buffer);
-        return false;
-    }
-
-    // update the hash
-    uint8_t *hash = ei_mic_ctx.hash_buffer.buffer;
-    // we have allocated twice as much for this data (because we also want to be able to represent in hex)
-    // thus only loop over the first half of the bytes as the signature_ctx has written to those
-    for (size_t hash_ix = 0; hash_ix < ei_mic_ctx.hash_buffer.size / 2; hash_ix++) {
-        // this might seem convoluted, but snprintf() with %02x is not always supported e.g. by newlib-nano
-        // we encode as hex... first ASCII char encodes top 4 bytes
-        uint8_t first = (hash[hash_ix] >> 4) & 0xf;
-        // second encodes lower 4 bytes
-        uint8_t second = hash[hash_ix] & 0xf;
-
-        // if 0..9 -> '0' (48) + value, if >10, then use 'a' (97) - 10 + value
-        char first_c = first >= 10 ? 87 + first : 48 + first;
-        char second_c = second >= 10 ? 87 + second : 48 + second;
-
-        page_buffer[ei_mic_ctx.signature_index + (hash_ix * 2) + 0] = first_c;
-        page_buffer[ei_mic_ctx.signature_index + (hash_ix * 2) + 1] = second_c;
-    }
-
-    j = mem->erase_sample_data(0, mem->block_size);
-    if (j != mem->block_size) {
-        ei_printf("Failed to erase first page\n");
-        free(page_buffer);
-        return false;
-    }
-
-    j = mem->write_sample_data(page_buffer, 0, mem->block_size);
-
-    free(page_buffer);
-
-    if (j != mem->block_size) {
-        ei_printf("Failed to write first page with updated hash\n");
-        return false;
-    }
-
 
     finish_and_upload();
 

@@ -579,10 +579,12 @@ EI_IMPULSE_ERROR drpai_run_yolov5_postprocessing(
  */
 EI_IMPULSE_ERROR run_nn_inference(
     const ei_impulse_t *impulse,
-    ei::matrix_t *fmatrix,
+    ei_feature_t *fmatrix,
+    uint32_t* input_block_ids,
+    uint32_t input_block_ids_size,
     ei_impulse_result_t *result,
     void *config_ptr,
-    bool debug = false)
+    bool debug)
 {
     // dummy, not used for DRPAI
 }
