@@ -107,7 +107,7 @@ static EI_IMPULSE_ERROR inference_tflite_run(
 
     ei_config_tflite_eon_graph_t *graph_config = (ei_config_tflite_eon_graph_t*)block_config->graph_config;
 
-    if(graph_config->model_invoke() != kTfLiteOk) {
+    if (graph_config->model_invoke() != kTfLiteOk) {
         return EI_IMPULSE_TFLITE_ERROR;
     }
 
@@ -122,7 +122,7 @@ static EI_IMPULSE_ERROR inference_tflite_run(
     }
 
     EI_IMPULSE_ERROR fill_res = fill_result_struct_from_output_tensor_tflite(
-        impulse, output, labels_tensor, scores_tensor, result, debug);
+        impulse, block_config, output, labels_tensor, scores_tensor, result, debug);
 
     if (fill_res != EI_IMPULSE_OK) {
         return fill_res;
@@ -204,6 +204,7 @@ EI_IMPULSE_ERROR run_nn_inference_from_dsp(
 EI_IMPULSE_ERROR run_nn_inference(
     const ei_impulse_t *impulse,
     ei_feature_t *fmatrix,
+    uint32_t learn_block_index,
     uint32_t* input_block_ids,
     uint32_t input_block_ids_size,
     ei_impulse_result_t *result,
@@ -252,7 +253,7 @@ EI_IMPULSE_ERROR run_nn_inference(
         tensor_arena, result, debug);
 
     if (result->copy_output) {
-        auto output_res = fill_output_matrix_from_tensor(&output, fmatrix[impulse->dsp_blocks_size].matrix);
+        auto output_res = fill_output_matrix_from_tensor(&output, fmatrix[impulse->dsp_blocks_size + learn_block_index].matrix);
         if (output_res != EI_IMPULSE_OK) {
             return output_res;
         }
@@ -380,6 +381,7 @@ __attribute__((unused)) int extract_tflite_eon_features(signal_t *signal, matrix
 
     ei_learning_block_config_tflite_graph_t ei_learning_block_config = {
         .implementation_version = 1,
+        .classification_mode = EI_CLASSIFIER_CLASSIFICATION_MODE_DSP,
         .block_id = dsp_config->block_id,
         .object_detection = false,
         .object_detection_last_layer = EI_CLASSIFIER_LAST_LAYER_UNKNOWN,

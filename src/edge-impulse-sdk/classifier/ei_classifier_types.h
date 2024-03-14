@@ -66,11 +66,11 @@ typedef struct {
     float anomaly;
     ei_impulse_result_timing_t timing;
     bool copy_output;
-#ifdef EI_CLASSIFIER_HAS_VISUAL_ANOMALY
+#if EI_CLASSIFIER_HAS_VISUAL_ANOMALY
     ei_impulse_result_bounding_box_t *visual_ad_grid_cells;
     uint32_t visual_ad_count;
     ei_impulse_visual_ad_result_t visual_ad_result;
-#endif
+#endif // EI_CLASSIFIER_HAS_VISUAL_ANOMALY
 } ei_impulse_result_t;
 
 #endif // _EDGE_IMPULSE_RUN_CLASSIFIER_TYPES_H_

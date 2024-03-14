@@ -163,7 +163,7 @@ static EI_IMPULSE_ERROR inference_tflite_setup(
  */
 static EI_IMPULSE_ERROR inference_tflite_run(
     const ei_impulse_t *impulse,
-    ei_learning_block_config_tflite_graph_t *config,
+    ei_learning_block_config_tflite_graph_t *block_config,
     uint64_t ctx_start_us,
     TfLiteTensor* output,
     TfLiteTensor* labels_tensor,
@@ -172,6 +172,7 @@ static EI_IMPULSE_ERROR inference_tflite_run(
     uint8_t* tensor_arena,
     ei_impulse_result_t *result,
     bool debug) {
+
 
     // Run inference, and report any error
     TfLiteStatus invoke_status = interpreter->Invoke();
@@ -192,7 +193,7 @@ static EI_IMPULSE_ERROR inference_tflite_run(
     }
 
     EI_IMPULSE_ERROR fill_res = fill_result_struct_from_output_tensor_tflite(
-        impulse, output, labels_tensor, scores_tensor, result, debug);
+        impulse, block_config, output, labels_tensor, scores_tensor, result, debug);
 
     delete interpreter;
 
@@ -276,6 +277,7 @@ EI_IMPULSE_ERROR run_nn_inference_from_dsp(
 EI_IMPULSE_ERROR run_nn_inference(
     const ei_impulse_t *impulse,
     ei_feature_t *fmatrix,
+    uint32_t learn_block_index,
     uint32_t* input_block_ids,
     uint32_t input_block_ids_size,
     ei_impulse_result_t *result,
@@ -323,7 +325,7 @@ EI_IMPULSE_ERROR run_nn_inference(
         interpreter, tensor_arena, result, debug);
 
     if (result->copy_output) {
-        auto output_res = fill_output_matrix_from_tensor(output, fmatrix[impulse->dsp_blocks_size].matrix);
+        auto output_res = fill_output_matrix_from_tensor(output, fmatrix[impulse->dsp_blocks_size + learn_block_index].matrix);
         if (output_res != EI_IMPULSE_OK) {
             return output_res;
         }
@@ -443,6 +445,7 @@ __attribute__((unused)) int extract_tflite_features(signal_t *signal, matrix_t *
 
     ei_learning_block_config_tflite_graph_t ei_learning_block_config = {
         .implementation_version = 1,
+        .classification_mode = EI_CLASSIFIER_CLASSIFICATION_MODE_DSP,
         .block_id = dsp_config->block_id,
         .object_detection = false,
         .object_detection_last_layer = EI_CLASSIFIER_LAST_LAYER_UNKNOWN,

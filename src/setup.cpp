@@ -60,6 +60,7 @@ void ei_main_init(void)
     
     ei_interaction_init();
     ei_camera_init();
+    ei_microphone_init();
 
     at = ei_at_init(dev);
     ei_printf("Type AT+HELP to see a list of commands.\r\n");

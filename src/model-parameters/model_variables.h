@@ -59,11 +59,13 @@ const size_t ei_dsp_blocks_size = 1;
 ei_model_dsp_t ei_dsp_blocks[ei_dsp_blocks_size] = {
     { // DSP block 2
         2,
-        33,
-        &extract_spectral_analysis_features,
-        (void*)&ei_dsp_config_2,
-        ei_dsp_config_2_axes,
-        ei_dsp_config_2_axes_size
+        33, // output size
+        &extract_spectral_analysis_features, // DSP function pointer
+        (void*)&ei_dsp_config_2, // pointer to config struct
+        ei_dsp_config_2_axes, // array of offsets into the input stream, one for each axis
+        ei_dsp_config_2_axes_size, // number of axes
+        1, // version
+        nullptr, // factory function
     }
 };
 const ei_config_tflite_eon_graph_t ei_config_tflite_graph_3 = {
@@ -78,6 +80,7 @@ const ei_config_tflite_eon_graph_t ei_config_tflite_graph_3 = {
 
 const ei_learning_block_config_tflite_graph_t ei_learning_block_config_3 = {
     .implementation_version = 1,
+    .classification_mode = EI_CLASSIFIER_CLASSIFICATION_MODE_CLASSIFICATION,
     .block_id = 3,
     .object_detection = 0,
     .object_detection_last_layer = EI_CLASSIFIER_LAST_LAYER_UNKNOWN,
@@ -91,6 +94,7 @@ const ei_learning_block_config_tflite_graph_t ei_learning_block_config_3 = {
 
 const ei_learning_block_config_anomaly_kmeans_t ei_learning_block_config_4 = {
     .implementation_version = 1,
+    .classification_mode = EI_CLASSIFIER_CLASSIFICATION_MODE_ANOMALY_KMEANS,
     .anom_axis = ei_classifier_anom_axes,
     .anom_axes_size = 3,
     .anom_clusters = ei_classifier_anom_clusters,
@@ -136,8 +140,13 @@ const ei_model_performance_calibration_t ei_calibration = {
     0   /* Don't use flags */
 };
 
-const ei_impulse_t impulse_134_1 = {
-    .project_id = 134,
+const ei_object_detection_nms_config_t ei_object_detection_nms = {
+    0.0f, /* NMS confidence threshold */
+    0.2f  /* NMS IOU threshold */
+};
+
+const ei_impulse_t impulse_86_0 = {
+    .project_id = 86,
     .project_owner = "Edge Impulse Profiling",
     .project_name = "Demo: Continuous motion recognition",
     .deploy_version = 1,
@@ -153,13 +162,15 @@ const ei_impulse_t impulse_134_1 = {
     .frequency = 62.5,
     .dsp_blocks_size = ei_dsp_blocks_size,
     .dsp_blocks = ei_dsp_blocks,
-    
+
     .object_detection = 0,
     .object_detection_count = 0,
+
     .object_detection_threshold = 0,
+
     .object_detection_last_layer = EI_CLASSIFIER_LAST_LAYER_UNKNOWN,
     .fomo_output_size = 0,
-    
+
     .tflite_output_features_count = 4,
     .learning_blocks_size = ei_learning_blocks_size,
     .learning_blocks = ei_learning_blocks,
@@ -171,12 +182,14 @@ const ei_impulse_t impulse_134_1 = {
     .slice_size = (125/4),
     .slices_per_model_window = 4,
 
-    .has_anomaly = 1,
+    .has_anomaly = EI_ANOMALY_TYPE_KMEANS,
     .label_count = 4,
     .calibration = ei_calibration,
-    .categories = ei_classifier_inferencing_categories
+    .categories = ei_classifier_inferencing_categories,
+    .object_detection_nms = ei_object_detection_nms
 };
 
-const ei_impulse_t ei_default_impulse = impulse_134_1;
+ei_impulse_handle_t impulse_handle_86_0 = ei_impulse_handle_t( &impulse_86_0 );
+ei_impulse_handle_t& ei_default_impulse = impulse_handle_86_0;
 
 #endif // _EI_CLASSIFIER_MODEL_METADATA_H_

@@ -23,6 +23,7 @@
 EI_IMPULSE_ERROR run_kmeans_anomaly(
     const ei_impulse_t *impulse,
     ei_feature_t *fmatrix,
+    uint32_t learn_block_index,
     uint32_t* input_block_ids,
     uint32_t input_block_ids_size,
     ei_impulse_result_t *result,
@@ -32,6 +33,7 @@ EI_IMPULSE_ERROR run_kmeans_anomaly(
 EI_IMPULSE_ERROR run_gmm_anomaly(
     const ei_impulse_t *impulse,
     ei_feature_t *fmatrix,
+    uint32_t learn_block_index,
     uint32_t* input_block_ids,
     uint32_t input_block_ids_size,
     ei_impulse_result_t *result,
@@ -41,6 +43,7 @@ EI_IMPULSE_ERROR run_gmm_anomaly(
 EI_IMPULSE_ERROR run_nn_inference(
     const ei_impulse_t *impulse,
     ei_feature_t *fmatrix,
+    uint32_t learn_block_index,
     uint32_t* input_block_ids,
     uint32_t input_block_ids_size,
     ei_impulse_result_t *result,

@@ -84,8 +84,8 @@ static sensor_aq_ctx ei_mic_ctx = {
 /* Audio thread setup */
 #define AUDIO_THREAD_STACK_SIZE             4096
 static uint8_t AUDIO_THREAD_STACK[AUDIO_THREAD_STACK_SIZE];
-Thread* queue_thread;
-EventQueue* mic_queue;
+Thread queue_thread(osPriorityHigh, AUDIO_THREAD_STACK_SIZE, AUDIO_THREAD_STACK, "audio-thread-stack");
+static EventQueue mic_queue;
 
 
 extern "C" {
@@ -125,8 +125,8 @@ static void audio_buffer_callback(uint32_t n_bytes)
 
     current_sample += n_bytes;
     if(current_sample >= (samples_required << 1)) {
-        PDM.end();
         record_ready = false;
+        PDM.end();
         ei_free(sampleBuffer);
     }
 }
@@ -144,7 +144,7 @@ static void pdm_data_ready_callback(void)
     int bytesRead = PDM.read((char *)&sampleBuffer[0], bytesAvailable);
 
     if(record_ready == true) {
-        mic_queue->call(&audio_buffer_callback, bytesRead);
+        mic_queue.call(&audio_buffer_callback, bytesRead);
     }
 }
 
@@ -178,7 +178,7 @@ static void pdm_data_ready_inference_callback(void)
     int bytesRead = PDM.read((char *)&sampleBuffer[0], bytesAvailable);
 
     if(record_ready == true) {
-        mic_queue->call(&audio_buffer_inference_callback, bytesRead);
+        mic_queue.call(&audio_buffer_inference_callback, bytesRead);
     }
 }
 
@@ -300,10 +300,7 @@ bool ei_microphone_record(uint32_t sample_length_ms, uint32_t start_delay_ms, bo
 
     create_header();
 
-    queue_thread = new Thread(osPriorityHigh, AUDIO_THREAD_STACK_SIZE, AUDIO_THREAD_STACK, "audio-thread-stack");
-    mic_queue = new EventQueue;
-
-    queue_thread->start(callback(mic_queue, &EventQueue::dispatch_forever));
+    queue_thread.start(callback(&mic_queue, &EventQueue::dispatch_forever));
 
     if (print_start_messages) {
         ei_printf("Sampling...\n");
@@ -364,10 +361,7 @@ bool ei_microphone_inference_start(uint32_t n_samples, float interval_ms)
     // set the gain, defaults to 20
     PDM.setGain(127);
 
-    queue_thread = new Thread(osPriorityHigh, AUDIO_THREAD_STACK_SIZE, AUDIO_THREAD_STACK, "audio-thread-stack");
-    mic_queue = new EventQueue;
-
-    queue_thread->start(callback(mic_queue, &EventQueue::dispatch_forever));
+    queue_thread.start(callback(&mic_queue, &EventQueue::dispatch_forever));
 
     record_ready = true;
 
@@ -423,6 +417,22 @@ int ei_microphone_audio_signal_get_data(size_t offset, size_t length, float *out
  * @return true 
  * @return false 
  */
+bool ei_microphone_init(void)
+{
+    EiDeviceInfo *dev = EiDeviceInfo::get_device();
+    EiDeviceMemory *mem = dev->get_memory();
+    
+    PDM.setBufferSize(mem->block_size);
+
+    return true;
+}
+
+/**
+ * @brief 
+ * 
+ * @return true 
+ * @return false 
+ */
 bool ei_microphone_inference_end(void)
 {
     record_ready = false;
@@ -431,12 +441,6 @@ bool ei_microphone_inference_end(void)
     ei_free(inference.buffers[0]);
     ei_free(inference.buffers[1]);
     ei_free(sampleBuffer);
-
-    mic_queue->break_dispatch();
-    delete mic_queue;
-
-    queue_thread->join();
-    delete queue_thread;
 }
 
 /**
@@ -478,10 +482,7 @@ bool ei_microphone_sample_start(void)
 
     // configure the data receive callback
     PDM.onReceive(&pdm_data_ready_callback);
-
-    // ei_printf("Sector size: %d\r\n", mem->block_size);
-    PDM.setBufferSize(mem->block_size);
-
+    
     // initialize PDM with:
     // - one channel (mono mode)
     // - a 16 kHz sample rate
@@ -499,7 +500,6 @@ bool ei_microphone_sample_start(void)
     // set the gain, defaults to 20
     PDM.setGain(127);
 
-    ei_printf("ei_microphone_record\r\n");
     bool r = ei_microphone_record(dev->get_sample_length_ms(), (((samples_required <<1)/ mem->block_size) * mem->block_erase_time), true);
     if (!r) {
         return r;
@@ -510,12 +510,6 @@ bool ei_microphone_sample_start(void)
     while(record_ready == true) {
         ThisThread::sleep_for(100);
     };
-
-    mic_queue->break_dispatch();
-    delete mic_queue;
-
-    queue_thread->join();
-    delete queue_thread;
 
     int ctx_err = ei_mic_ctx.signature_ctx->finish(ei_mic_ctx.signature_ctx, ei_mic_ctx.hash_buffer.buffer);
     if (ctx_err != 0) {

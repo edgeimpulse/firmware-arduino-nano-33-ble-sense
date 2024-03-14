@@ -201,6 +201,7 @@ bool init_memryx(bool debug, const ei_impulse_t *impulse)
 EI_IMPULSE_ERROR run_nn_inference(
     const ei_impulse_t *impulse,
     ei_feature_t *fmatrix,
+    uint32_t learn_block_index,
     uint32_t* input_block_ids,
     uint32_t input_block_ids_size,
     ei_impulse_result_t *result,
@@ -346,6 +347,7 @@ EI_IMPULSE_ERROR run_nn_inference(
 EI_IMPULSE_ERROR run_nn_inference(
     const ei_impulse_t *impulse,
     ei_feature_t *fmatrix,
+    uint32_t learn_block_index,
     uint32_t* inputBlockIds,
     ei_impulse_result_t *result,
     void *config_ptr,

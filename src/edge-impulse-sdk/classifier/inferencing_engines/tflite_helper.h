@@ -277,17 +277,17 @@ EI_IMPULSE_ERROR fill_output_matrix_from_tensor(
 
 EI_IMPULSE_ERROR fill_result_struct_from_output_tensor_tflite(
     const ei_impulse_t *impulse,
+    ei_learning_block_config_tflite_graph_t *block_config,
     TfLiteTensor* output,
     TfLiteTensor* labels_tensor,
     TfLiteTensor* scores_tensor,
     ei_impulse_result_t *result,
     bool debug
 ) {
-
     EI_IMPULSE_ERROR fill_res = EI_IMPULSE_OK;
 
-    if (impulse->object_detection) {
-        switch (impulse->object_detection_last_layer) {
+    if (block_config->classification_mode == EI_CLASSIFIER_CLASSIFICATION_MODE_OBJECT_DETECTION) {
+        switch (block_config->object_detection_last_layer) {
             case EI_CLASSIFIER_LAST_LAYER_FOMO: {
                 bool int8_output = output->type == TfLiteType::kTfLiteInt8;
                 if (int8_output) {
@@ -336,7 +336,8 @@ EI_IMPULSE_ERROR fill_result_struct_from_output_tensor_tflite(
                         output->data.int8,
                         output->params.zero_point,
                         output->params.scale,
-                        impulse->tflite_output_features_count);
+                        impulse->tflite_output_features_count,
+                        debug);
                 }
                 else if (output->type == kTfLiteUInt8) {
                     fill_res = fill_result_struct_quantized_yolov5(
@@ -346,7 +347,8 @@ EI_IMPULSE_ERROR fill_result_struct_from_output_tensor_tflite(
                         output->data.uint8,
                         output->params.zero_point,
                         output->params.scale,
-                        impulse->tflite_output_features_count);
+                        impulse->tflite_output_features_count,
+                        debug);
                 }
                 else if (output->type == kTfLiteFloat32) {
                     fill_res = fill_result_struct_f32_yolov5(
@@ -354,7 +356,8 @@ EI_IMPULSE_ERROR fill_result_struct_from_output_tensor_tflite(
                         result,
                         version,
                         output->data.f,
-                        impulse->tflite_output_features_count);
+                        impulse->tflite_output_features_count,
+                        debug);
                 }
                 else {
                     ei_printf("ERR: Invalid output type (%d) for YOLOv5 last layer\n", output->type);
@@ -371,7 +374,8 @@ EI_IMPULSE_ERROR fill_result_struct_from_output_tensor_tflite(
                         impulse,
                         result,
                         output->data.f,
-                        impulse->tflite_output_features_count);
+                        impulse->tflite_output_features_count,
+                        debug);
                 #endif
                 break;
             }
@@ -392,6 +396,115 @@ EI_IMPULSE_ERROR fill_result_struct_from_output_tensor_tflite(
                 #endif
                 break;
             }
+            case EI_CLASSIFIER_LAST_LAYER_TAO_SSD:
+            case EI_CLASSIFIER_LAST_LAYER_TAO_RETINANET: {
+
+                if (output->type == kTfLiteInt8) {
+                    fill_res = fill_result_struct_quantized_tao_decode_detections(
+                        impulse,
+                        result,
+                        output->data.int8,
+                        output->params.zero_point,
+                        output->params.scale,
+                        impulse->tflite_output_features_count,
+                        debug);
+                }
+                else if (output->type == kTfLiteUInt8) {
+                    fill_res = fill_result_struct_quantized_tao_decode_detections(
+                        impulse,
+                        result,
+                        output->data.uint8,
+                        output->params.zero_point,
+                        output->params.scale,
+                        impulse->tflite_output_features_count,
+                        debug);
+                }
+                else if (output->type == kTfLiteFloat32) {
+                    fill_res = fill_result_struct_f32_tao_decode_detections(
+                        impulse,
+                        result,
+                        output->data.f,
+                        impulse->tflite_output_features_count,
+                        debug);
+                }
+                else {
+                    ei_printf("ERR: Invalid output type (%d) for TAO last layer\n", output->type);
+                    return EI_IMPULSE_UNSUPPORTED_INFERENCING_ENGINE;
+                }
+                break;
+            }
+            case EI_CLASSIFIER_LAST_LAYER_TAO_YOLOV3: {
+
+                if (output->type == kTfLiteInt8) {
+                    fill_res = fill_result_struct_quantized_tao_yolov3(
+                        impulse,
+                        result,
+                        output->data.int8,
+                        output->params.zero_point,
+                        output->params.scale,
+                        impulse->tflite_output_features_count,
+                        debug);
+                }
+                else if (output->type == kTfLiteUInt8) {
+                    fill_res = fill_result_struct_quantized_tao_yolov3(
+                        impulse,
+                        result,
+                        output->data.uint8,
+                        output->params.zero_point,
+                        output->params.scale,
+                        impulse->tflite_output_features_count,
+                        debug);
+                }
+                else if (output->type == kTfLiteFloat32) {
+                    fill_res = fill_result_struct_f32_tao_yolov3(
+                        impulse,
+                        result,
+                        output->data.f,
+                        impulse->tflite_output_features_count,
+                        debug);
+                }
+                else {
+                    ei_printf("ERR: Invalid output type (%d) for TAO YOLOv3 layer\n", output->type);
+                    return EI_IMPULSE_UNSUPPORTED_INFERENCING_ENGINE;
+                }
+                break;
+            }
+            case EI_CLASSIFIER_LAST_LAYER_TAO_YOLOV4: {
+
+                if (output->type == kTfLiteInt8) {
+                    fill_res = fill_result_struct_quantized_tao_yolov4(
+                        impulse,
+                        result,
+                        output->data.int8,
+                        output->params.zero_point,
+                        output->params.scale,
+                        impulse->tflite_output_features_count,
+                        debug);
+                }
+                else if (output->type == kTfLiteUInt8) {
+                    fill_res = fill_result_struct_quantized_tao_yolov4(
+                        impulse,
+                        result,
+                        output->data.uint8,
+                        output->params.zero_point,
+                        output->params.scale,
+                        impulse->tflite_output_features_count,
+                        debug);
+                }
+                else if (output->type == kTfLiteFloat32) {
+                    fill_res = fill_result_struct_f32_tao_yolov4(
+                        impulse,
+                        result,
+                        output->data.f,
+                        impulse->tflite_output_features_count,
+                        debug);
+                }
+                else {
+                    ei_printf("ERR: Invalid output type (%d) for TAO YOLOv4 layer\n", output->type);
+                    return EI_IMPULSE_UNSUPPORTED_INFERENCING_ENGINE;
+                }
+                break;
+            }
             default: {
                 ei_printf("ERR: Unsupported object detection last layer (%d)\n",
                     impulse->object_detection_last_layer);
@@ -399,19 +512,23 @@ EI_IMPULSE_ERROR fill_result_struct_from_output_tensor_tflite(
             }
         }
     }
-    else if (impulse->has_anomaly == 3 && !result->copy_output)
+    else if (block_config->classification_mode == EI_CLASSIFIER_CLASSIFICATION_MODE_VISUAL_ANOMALY)
     {
-        fill_res = fill_result_visual_ad_struct_f32(impulse, result, output->data.f, debug);
+        if (!result->copy_output) {
+            fill_res = fill_result_visual_ad_struct_f32(impulse, result, output->data.f, debug);
+        }
     }
     // if we copy the output, we don't need to process it as classification
-    else if (!result->copy_output)
+    else
     {
-        bool int8_output = output->type == TfLiteType::kTfLiteInt8;
-        if (int8_output) {
-            fill_res = fill_result_struct_i8(impulse, result, output->data.int8, output->params.zero_point, output->params.scale, debug);
-        }
-        else {
-            fill_res = fill_result_struct_f32(impulse, result, output->data.f, debug);
+        if (!result->copy_output) {
+            bool int8_output = output->type == TfLiteType::kTfLiteInt8;
+            if (int8_output) {
+                fill_res = fill_result_struct_i8(impulse, result, output->data.int8, output->params.zero_point, output->params.scale, debug);
+            }
+            else {
+                fill_res = fill_result_struct_f32(impulse, result, output->data.f, debug);
+            }
         }
     }
 
