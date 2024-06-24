@@ -16,7 +16,6 @@ limitations under the License.
 #define TENSORFLOW_LITE_KERNELS_INTERNAL_COMPATIBILITY_H_
 
 #include <cstdint>
-#include "edge-impulse-sdk/tensorflow/lite/portable_type_to_tflitetype.h"
 
 #include "edge-impulse-sdk/tensorflow/lite/kernels/op_macros.h"
 

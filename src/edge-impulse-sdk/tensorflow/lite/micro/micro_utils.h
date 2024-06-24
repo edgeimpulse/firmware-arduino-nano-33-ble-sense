@@ -27,7 +27,6 @@ limitations under the License.
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
-#include "edge-impulse-sdk/tensorflow/lite/portable_type_to_tflitetype.h"
 #include <limits>
 
 #include "edge-impulse-sdk/tensorflow/lite/c/common.h"
