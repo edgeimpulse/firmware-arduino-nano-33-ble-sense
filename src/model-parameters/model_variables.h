@@ -33,7 +33,7 @@
 const char* ei_classifier_inferencing_categories[] = { "idle", "snake", "updown", "wave" };
 
 uint8_t ei_dsp_config_2_axes[] = { 0, 1, 2 };
-const uint32_t ei_dsp_config_2_axes_size = 3;
+const uint8_t ei_dsp_config_2_axes_size = 3;
 ei_dsp_config_spectral_analysis_t ei_dsp_config_2 = {
     2, // uint32_t blockId
     2, // int implementationVersion
@@ -55,7 +55,7 @@ ei_dsp_config_spectral_analysis_t ei_dsp_config_2 = {
     false // boolean extra-low-freq
 };
 
-const size_t ei_dsp_blocks_size = 1;
+const uint8_t ei_dsp_blocks_size = 1;
 ei_model_dsp_t ei_dsp_blocks[ei_dsp_blocks_size] = {
     { // DSP block 2
         2,
@@ -104,11 +104,11 @@ const ei_learning_block_config_anomaly_kmeans_t ei_learning_block_config_4 = {
     .anom_mean = ei_classifier_anom_mean,
 };
 
-const size_t ei_learning_blocks_size = 2;
+const uint8_t ei_learning_blocks_size = 2;
 const uint32_t ei_learning_block_3_inputs[1] = { 2 };
-const uint32_t ei_learning_block_3_inputs_size = 1;
+const uint8_t ei_learning_block_3_inputs_size = 1;
 const uint32_t ei_learning_block_4_inputs[1] = { 2 };
-const uint32_t ei_learning_block_4_inputs_size = 1;
+const uint8_t ei_learning_block_4_inputs_size = 1;
 const ei_learning_block_t ei_learning_blocks[ei_learning_blocks_size] = {
     {
         3,
@@ -145,6 +145,8 @@ const ei_impulse_t impulse_86_0 = {
     .project_id = 86,
     .project_owner = "Edge Impulse Profiling",
     .project_name = "Demo: Continuous motion recognition",
+    .impulse_id = 1,
+    .impulse_name = "",
     .deploy_version = 1,
 
     .nn_input_frame_size = 33,

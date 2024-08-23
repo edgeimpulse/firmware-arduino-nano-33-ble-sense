@@ -139,7 +139,7 @@ check_dependency()
         exit 1
     fi
 
-    if (( CLI_MINOR < EXPECTED_CLI_MINOR)); then
+    if ((CLI_MAJOR <= EXPECTED_CLI_MAJOR && CLI_MINOR < EXPECTED_CLI_MINOR)); then
         echo "You need to upgrade your Arduino CLI version (now: $CLI_MAJOR.$CLI_MINOR.$CLI_REV, but required: $EXPECTED_CLI_MAJOR.$EXPECTED_CLI_MINOR.x or higher)"
         echo "See https://arduino.github.io/arduino-cli/installation/ for upgrade instructions"
         exit 1

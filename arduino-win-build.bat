@@ -39,9 +39,7 @@ FOR /F "tokens=1-3 delims==." %%I IN ('arduino-cli version') DO (
     )
 )
 
-if !CLI_MINOR! LSS !EXPECTED_CLI_MINOR! (
-    GOTO UPGRADECLI
-)
+if !CLI_MAJOR! LEQ !EXPECTED_CLI_MAJOR! if !CLI_MINOR! LSS !EXPECTED_CLI_MINOR! GOTO UPGRADECLI
 
 if !CLI_MAJOR! NEQ !EXPECTED_CLI_MAJOR! (
     echo You're using an untested version of Arduino CLI, this might cause issues (found: %CLI_MAJOR%.%CLI_MINOR%.%CLI_REV%, expected: %EXPECTED_CLI_MAJOR%.%EXPECTED_CLI_MINOR%.x )
