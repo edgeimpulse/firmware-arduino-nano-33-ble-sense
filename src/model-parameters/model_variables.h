@@ -32,13 +32,6 @@
 #ifndef _EI_CLASSIFIER_MODEL_VARIABLES_H_
 #define _EI_CLASSIFIER_MODEL_VARIABLES_H_
 
-/**
- * @file
- *  Auto-generated complete impulse definitions. The ei_impulse_handle_t should
- *  be passed to ei_run_classifier() function to use this specific impulse.
- *  This file should only be included in ei_run_classifier.h file.
- */
-
 #include <stdint.h>
 #include "model_metadata.h"
 #include "anomaly_metadata.h"
@@ -46,12 +39,11 @@
 
 #include "edge-impulse-sdk/classifier/ei_model_types.h"
 #include "edge-impulse-sdk/classifier/inferencing_engines/engines.h"
-#include "edge-impulse-sdk/classifier/postprocessing/ei_postprocessing_common.h"
 
 const char* ei_classifier_inferencing_categories[] = { "idle", "snake", "updown", "wave" };
 
 uint8_t ei_dsp_config_2_axes[] = { 0, 1, 2 };
-const uint32_t ei_dsp_config_2_axes_size = 3;
+const uint8_t ei_dsp_config_2_axes_size = 3;
 ei_dsp_config_spectral_analysis_t ei_dsp_config_2 = {
     2, // uint32_t blockId
     2, // int implementationVersion
@@ -96,13 +88,16 @@ const ei_config_tflite_eon_graph_t ei_config_tflite_graph_3 = {
 };
 
 
-const uint8_t ei_output_tensors_indices_3[1] = { 0 };
-const uint8_t ei_output_tensors_size_3 = 1;
 const ei_learning_block_config_tflite_graph_t ei_learning_block_config_3 = {
     .implementation_version = 1,
+    .classification_mode = EI_CLASSIFIER_CLASSIFICATION_MODE_CLASSIFICATION,
     .block_id = 3,
-    .output_tensors_indices = ei_output_tensors_indices_3,
-    .output_tensors_size = ei_output_tensors_size_3,
+    .object_detection = 0,
+    .object_detection_last_layer = EI_CLASSIFIER_LAST_LAYER_UNKNOWN,
+    .output_data_tensor = 0,
+    .output_labels_tensor = 1,
+    .output_score_tensor = 2,
+    .threshold = 0,
     .quantized = 1,
     .compiled = 1,
     .graph_config = (void*)&ei_config_tflite_graph_3
@@ -110,6 +105,7 @@ const ei_learning_block_config_tflite_graph_t ei_learning_block_config_3 = {
 
 const ei_learning_block_config_anomaly_kmeans_t ei_learning_block_config_4 = {
     .implementation_version = 1,
+    .classification_mode = EI_CLASSIFIER_CLASSIFICATION_MODE_ANOMALY_KMEANS,
     .anom_axis = ei_classifier_anom_axes,
     .anom_axes_size = 3,
     .anom_clusters = ei_classifier_anom_clusters,
@@ -126,47 +122,39 @@ const uint8_t ei_learning_block_4_inputs_size = 1;
 const ei_learning_block_t ei_learning_blocks[ei_learning_blocks_size] = {
     {
         3,
+        false,
         &run_nn_inference,
         (void*)&ei_learning_block_config_3,
         EI_CLASSIFIER_IMAGE_SCALING_NONE,
         ei_learning_block_3_inputs,
         ei_learning_block_3_inputs_size,
+        4
     },
     {
         4,
+        false,
         &run_kmeans_anomaly,
         (void*)&ei_learning_block_config_4,
         EI_CLASSIFIER_IMAGE_SCALING_NONE,
         ei_learning_block_4_inputs,
         ei_learning_block_4_inputs_size,
+        1
     },
 };
 
-const ei_fill_result_classification_i8_config_t ei_fill_result_classification_i8_config_3 = {
-    .zero_point = -128,
-    .scale = 0.00390625
-};
-const size_t ei_postprocessing_blocks_size = 1;
-const ei_postprocessing_block_t ei_postprocessing_blocks[ei_postprocessing_blocks_size] = {
-    {
-        .block_id = 3,
-        .type = EI_CLASSIFIER_MODE_CLASSIFICATION,
-        .init_fn = NULL,
-        .deinit_fn = NULL,
-        .postprocess_fn = &process_classification_i8,
-        .display_fn = NULL,
-        .config = (void*)&ei_fill_result_classification_i8_config_3,
-        .input_block_id = 3
-    },
+
+const ei_object_detection_nms_config_t ei_object_detection_nms = {
+    0.0f, /* NMS confidence threshold */
+    0.2f  /* NMS IOU threshold */
 };
 
-const ei_impulse_t impulse_39_0 = {
-    .project_id = 39,
+const ei_impulse_t impulse_167_0 = {
+    .project_id = 167,
     .project_owner = "Edge Impulse Profiling",
     .project_name = "Demo: Continuous motion recognition",
     .impulse_id = 1,
     .impulse_name = "Impulse #1",
-    .deploy_version = 5,
+    .deploy_version = 1,
 
     .nn_input_frame_size = 33,
     .raw_sample_count = 125,
@@ -177,15 +165,20 @@ const ei_impulse_t impulse_39_0 = {
     .input_frames = 0,
     .interval_ms = 16,
     .frequency = 62.5,
-
     .dsp_blocks_size = ei_dsp_blocks_size,
     .dsp_blocks = ei_dsp_blocks,
 
+    .object_detection_count = 0,
+    .fomo_output_size = 0,
+    .visual_ad_grid_size_x = 0,
+    .visual_ad_grid_size_y = 0,
+
+    .tflite_output_features_count = 4,
     .learning_blocks_size = ei_learning_blocks_size,
     .learning_blocks = ei_learning_blocks,
 
-    .postprocessing_blocks_size = 1,
-    .postprocessing_blocks = ei_postprocessing_blocks,
+    .postprocessing_blocks_size = 0,
+    .postprocessing_blocks = nullptr,
 
     .inferencing_engine = EI_CLASSIFIER_TFLITE,
 
@@ -196,10 +189,11 @@ const ei_impulse_t impulse_39_0 = {
 
     .has_anomaly = EI_ANOMALY_TYPE_KMEANS,
     .label_count = 4,
-    .categories = ei_classifier_inferencing_categories
+    .categories = ei_classifier_inferencing_categories,
+    .object_detection_nms = ei_object_detection_nms
 };
 
-ei_impulse_handle_t impulse_handle_39_0 = ei_impulse_handle_t( &impulse_39_0 );
-ei_impulse_handle_t& ei_default_impulse = impulse_handle_39_0;
+ei_impulse_handle_t impulse_handle_167_0 = ei_impulse_handle_t( &impulse_167_0 );
+ei_impulse_handle_t& ei_default_impulse = impulse_handle_167_0;
 
-#endif // _EI_CLASSIFIER_MODEL_VARIABLES_H_
+#endif // _EI_CLASSIFIER_MODEL_METADATA_H_
