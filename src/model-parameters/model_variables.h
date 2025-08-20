@@ -110,6 +110,7 @@ const ei_learning_block_config_tflite_graph_t ei_learning_block_config_3 = {
 
 const ei_learning_block_config_anomaly_kmeans_t ei_learning_block_config_4 = {
     .implementation_version = 1,
+    .block_id = 4,
     .anom_axis = ei_classifier_anom_axes,
     .anom_axes_size = 3,
     .anom_clusters = ei_classifier_anom_clusters,
