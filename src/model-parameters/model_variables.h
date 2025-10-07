@@ -164,13 +164,18 @@ const ei_postprocessing_block_t ei_postprocessing_blocks_43_1[ei_postprocessing_
     },
 };
 
+const uint8_t freeform_outputs_43_1_size = 0;
+
+uint32_t *freeform_outputs_43_1 = nullptr;
+
+
 const ei_impulse_t impulse_43_1 = {
     .project_id = 43,
     .project_owner = "Edge Impulse Profiling",
     .project_name = "Demo: Continuous motion recognition",
     .impulse_id = 1,
     .impulse_name = "Impulse #1",
-    .deploy_version = 18,
+    .deploy_version = 28,
 
     .nn_input_frame_size = 33,
     .raw_sample_count = 125,
@@ -191,6 +196,8 @@ const ei_impulse_t impulse_43_1 = {
     .postprocessing_blocks_size = ei_postprocessing_blocks_43_1_size,
     .postprocessing_blocks = ei_postprocessing_blocks_43_1,
 
+    .output_tensors_size = 1,
+
     .inferencing_engine = EI_CLASSIFIER_TFLITE,
 
     .sensor = EI_CLASSIFIER_SENSOR_ACCELEROMETER,
@@ -200,7 +207,9 @@ const ei_impulse_t impulse_43_1 = {
 
     .has_anomaly = EI_ANOMALY_TYPE_KMEANS,
     .label_count = 4,
-    .categories = ei_classifier_inferencing_categories_43_1
+    .categories = ei_classifier_inferencing_categories_43_1,
+    .freeform_outputs_size = freeform_outputs_43_1_size,
+    .freeform_outputs = freeform_outputs_43_1
 };
 
 ei_impulse_handle_t impulse_handle_43_1 = ei_impulse_handle_t( &impulse_43_1 );

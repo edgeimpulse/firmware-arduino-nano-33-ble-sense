@@ -83,7 +83,7 @@
 #define EI_CLASSIFIER_PROJECT_ID                 43
 #define EI_CLASSIFIER_PROJECT_OWNER              "Edge Impulse Profiling"
 #define EI_CLASSIFIER_PROJECT_NAME               "Demo: Continuous motion recognition"
-#define EI_CLASSIFIER_PROJECT_DEPLOY_VERSION     18
+#define EI_CLASSIFIER_PROJECT_DEPLOY_VERSION     28
 #define EI_CLASSIFIER_NN_INPUT_FRAME_SIZE        33
 #define EI_CLASSIFIER_RAW_SAMPLE_COUNT           125
 #define EI_CLASSIFIER_RAW_SAMPLES_PER_FRAME      3
@@ -117,6 +117,7 @@
 
 #define EI_CLASSIFIER_QUANTIZATION_ENABLED       1
 #define EI_CLASSIFIER_LOAD_IMAGE_SCALING         0
+#define EI_CLASSIFIER_FREEFORM_OUTPUT            0
 
 
 #define EI_CLASSIFIER_HAS_FFT_INFO               1
