@@ -43,7 +43,6 @@
 #include "model_metadata.h"
 #include "anomaly_metadata.h"
 #include "tflite-model/tflite_learn_43_3_compiled.h"
-
 #include "edge-impulse-sdk/classifier/ei_model_types.h"
 #include "edge-impulse-sdk/classifier/inferencing_engines/engines.h"
 #include "edge-impulse-sdk/classifier/postprocessing/ei_postprocessing_common.h"
@@ -96,7 +95,6 @@ const ei_config_tflite_eon_graph_t ei_config_graph_43_3 = {
     .model_output = &tflite_learn_43_3_output,
 };
 
-
 const uint8_t ei_output_tensors_indices_43_3[1] = { 0 };
 const uint8_t ei_output_tensors_size_43_3 = 1;
 ei_learning_block_config_tflite_graph_t ei_learning_block_config_43_3 = {
@@ -115,10 +113,10 @@ const ei_learning_block_config_anomaly_kmeans_t ei_learning_block_config_43_4 = 
     .block_id = 4,
     .anom_axis = ei_classifier_anom_axes_43_4,
     .anom_axes_size = 3,
-    .anom_clusters = ei_classifier_anom_clusters,
+    .anom_clusters = ei_classifier_anom_clusters_43_4,
     .anom_cluster_count = 32,
-    .anom_scale = ei_classifier_anom_scale,
-    .anom_mean = ei_classifier_anom_mean,
+    .anom_scale = ei_classifier_anom_scale_43_4,
+    .anom_mean = ei_classifier_anom_mean_43_4,
 };
 
 const uint8_t ei_learning_blocks_43_1_size = 2;
@@ -168,14 +166,13 @@ const uint8_t freeform_outputs_43_1_size = 0;
 
 uint32_t *freeform_outputs_43_1 = nullptr;
 
-
 const ei_impulse_t impulse_43_1 = {
     .project_id = 43,
     .project_owner = "Edge Impulse Profiling",
     .project_name = "Demo: Continuous motion recognition",
     .impulse_id = 1,
     .impulse_name = "Impulse #1",
-    .deploy_version = 28,
+    .deploy_version = 38,
 
     .nn_input_frame_size = 33,
     .raw_sample_count = 125,
@@ -208,14 +205,15 @@ const ei_impulse_t impulse_43_1 = {
     .has_anomaly = EI_ANOMALY_TYPE_KMEANS,
     .label_count = 4,
     .categories = ei_classifier_inferencing_categories_43_1,
+    .results_type = EI_CLASSIFIER_TYPE_CLASSIFICATION,
     .freeform_outputs_size = freeform_outputs_43_1_size,
     .freeform_outputs = freeform_outputs_43_1
 };
 
 ei_impulse_handle_t impulse_handle_43_1 = ei_impulse_handle_t( &impulse_43_1 );
+
 ei_impulse_handle_t& ei_default_impulse = impulse_handle_43_1;
 constexpr auto& ei_classifier_inferencing_categories = ei_classifier_inferencing_categories_43_1;
 const auto ei_dsp_blocks_size = ei_dsp_blocks_43_1_size;
 ei_model_dsp_t *ei_dsp_blocks = ei_dsp_blocks_43_1;
-
 #endif // _EI_CLASSIFIER_MODEL_VARIABLES_H_

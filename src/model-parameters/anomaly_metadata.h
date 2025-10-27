@@ -37,9 +37,9 @@
 const uint16_t ei_classifier_anom_axes_43_4[] = { 0, 11, 22 };
 
 // (before - mean) / scale
-const float ei_classifier_anom_scale[3] = { 4.624091607017868, 3.087898029381507, 2.0612164195028755 };
-const float ei_classifier_anom_mean[3] = { 4.130897597914873, 2.8558633318647297, 2.213898305068428 };
-const ei_classifier_anom_cluster_t ei_classifier_anom_clusters[32] = {
+const float ei_classifier_anom_scale_43_4[3] = { 4.624091607017868, 3.087898029381507, 2.0612164195028755 };
+const float ei_classifier_anom_mean_43_4[3] = { 4.130897597914873, 2.8558633318647297, 2.213898305068428 };
+const ei_classifier_anom_cluster_t ei_classifier_anom_clusters_43_4[32] = {
 	{ ( float[3] ) { -0.8898983001708984, -0.9161274433135986, -1.0529570579528809 }, 0.46178802274385977 },
 	{ ( float[3] ) { 1.5642839670181274, -0.1921110451221466, -0.46868735551834106 }, 0.4123984149156099 },
 	{ ( float[3] ) { -0.19094233214855194, 1.3942583799362183, -0.012681026943027973 }, 0.452961396030579 },
